@@ -6,6 +6,10 @@
 -- MySQL 版本要求：8.0+（本机为 8.0.36）
 -- ============================================================
 
+-- 重要：Windows 下 mysql 客户端默认用 GBK 连接，会把本文件（UTF-8）里的中文转码搞乱，
+-- 表现为 "Data too long for column" 或注释乱码。此行强制连接字符集为 utf8mb4。
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS tsa
     DEFAULT CHARACTER SET utf8mb4
     DEFAULT COLLATE utf8mb4_0900_ai_ci;

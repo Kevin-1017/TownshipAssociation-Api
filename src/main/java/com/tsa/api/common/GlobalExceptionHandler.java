@@ -3,6 +3,7 @@ package com.tsa.api.common;
 import cn.dev33.satoken.exception.NotLoginException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -35,6 +36,13 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("；"));
         log.warn("参数校验失败: {}", detail);
         return Result.fail(ResultCode.BAD_REQUEST, detail);
+    }
+
+    /** 请求体 JSON 解析失败（格式错误/非法编码）：属于客户端问题，返回 400 而非 500 */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public Result<Void> handleNotReadable(HttpMessageNotReadableException e) {
+        log.warn("请求体解析失败: {}", e.getMessage());
+        return Result.fail(ResultCode.BAD_REQUEST, "请求体 JSON 格式错误");
     }
 
     /** 未登录 / token 失效：Sa-Token 抛此异常 */

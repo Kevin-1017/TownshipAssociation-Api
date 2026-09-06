@@ -3,6 +3,7 @@
 乡会平台的统一后端服务：同时为 **uni-app 微信小程序** 与未来的 **React 官网** 提供 RESTful API。
 
 - 技术选型总说明：[docs/TECH_STACK.md](docs/TECH_STACK.md)（为什么是这套栈、明确不用什么）
+- **开发规范（必读）**：[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)（Git 流程、分层纪律、PR 自查清单）
 - 数据库设计：[docs/DATABASE.md](docs/DATABASE.md)
 - 接口规范：[docs/API.md](docs/API.md)
 - 在线接口文档（启动后）：http://localhost:8080/doc.html

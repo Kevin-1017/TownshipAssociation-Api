@@ -1,0 +1,16 @@
+# 统一编辑规范：所有人（含学生）的 IDE 都会读取此文件
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.java]
+indent_style = space
+indent_size = 4
+
+[*.{xml,yml,yaml,json,md}]
+indent_style = space
+indent_size = 2

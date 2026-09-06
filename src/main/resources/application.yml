@@ -1,0 +1,58 @@
+# ===================================================
+# 通用配置（所有环境共享）。环境差异写在 application-dev.yml / application-prod.yml
+# ===================================================
+server:
+  port: 8080
+
+spring:
+  application:
+    name: tsa-api
+  profiles:
+    active: dev
+  # 重要（踩坑记录）：knife4j 4.5.0 是最后版本，其增强组件按 springdoc 旧接口编译，
+  # 与 Boot 3.5 + springdoc 2.8 冲突（NoSuchMethodError: getGroupConfigs）。
+  # 排除其自动配置：/doc.html 页面保留可用，仅失去 knife4j 特有的排序/离线文档增强。
+  # 若后续 knife4j 发布兼容版本，删掉本段即可恢复全部增强能力。
+  autoconfigure:
+    exclude: com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration
+  # 统一时间序列化格式（否则前端会收到 ISO 数组格式，处理麻烦）
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
+
+mybatis-plus:
+  configuration:
+    # 数据库下划线字段 <-> Java 驼峰属性 自动映射（如 created_at <-> createdAt）
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath*:mapper/**/*.xml   # 二期写复杂 SQL 时放这里
+
+# Sa-Token 官方文档：https://sa-token.cc
+sa-token:
+  token-name: tsa-token        # 前端请求头携带 token 的字段名
+  timeout: 604800              # token 有效期 7 天
+  active-timeout: -1           # 不做临时冻结
+  is-concurrent: true          # 允许同一账号多端在线
+  is-share: false              # 每次登录生成新 token
+  token-style: uuid
+  is-log: false
+
+# 接口文档
+springdoc:
+  api-docs:
+    enabled: true
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# ------- 业务配置占位（第二期启用，先留好结构） -------
+tsa:
+  wechat:
+    # 小程序 appid/secret：登录接口(code2session)使用，通过环境变量注入，切勿把明文提交进 Git
+    app-id: ${WECHAT_APP_ID:}
+    app-secret: ${WECHAT_APP_SECRET:}
+  map:
+    # 腾讯位置服务 key：地理编码/逆地理编码使用
+    qq-key: ${QQ_MAP_KEY:}

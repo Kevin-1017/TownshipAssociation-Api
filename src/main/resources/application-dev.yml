@@ -1,0 +1,24 @@
+# ===================================================
+# 开发环境（本机）配置
+# 首次运行前：把下面的 password 改成你本机 MySQL 的 root 密码
+# ===================================================
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/tsa?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: REPLACE_WITH_YOUR_MYSQL_ROOT_PASSWORD
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+# ------- 第二期接入 Redis 时打开（配合根目录 docker-compose.yml 起 Redis 7） -------
+#  spring:
+#    data:
+#      redis:
+#        host: localhost
+#        port: 6379
+
+logging:
+  level:
+    com.tsa.api: debug   # 开发期打印 SQL 与业务日志，方便学生排查

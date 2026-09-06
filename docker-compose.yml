@@ -1,0 +1,23 @@
+# ============================================================
+# 可选：第二期接入 Redis 时使用（第一期项目不依赖本文件）
+#
+# 说明：
+# - 本机 MySQL 8.0.36 继续用 Windows 服务运行，不放进来
+# - 本机原有的 Redis 3.0（微软旧端口）建议弃用，改用本文件的官方 Redis 7：
+#     docker compose up -d redis
+# - 启动后修改 application-dev.yml：取消 spring.data.redis 注释块；
+#   并在 pom.xml 打开 sa-token-redis-template / data-redis 两个依赖注释
+# ============================================================
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: tsa-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:

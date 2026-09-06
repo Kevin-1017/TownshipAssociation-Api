@@ -1,0 +1,15 @@
+# Maven
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 日志与本地临时文件
+logs/
+*.log
+
+# 操作系统
+.DS_Store
+Thumbs.db

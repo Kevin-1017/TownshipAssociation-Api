@@ -31,7 +31,7 @@ description: tsa-api 后端项目的标准开发流程与强制规范。任何�
 3. **mapper**：`interface XxxMapper extends BaseMapper<Xxx>`，复杂 SQL 才用 XML（放 `resources/mapper/`）
 4. **dto**：入参 `XxxRequest`（写）/ `XxxQuery`（读筛选），出参裁剪用 `XxxVO`，全放 `dto/` 包；校验注解 + message 全部中文 + `@Schema` example；entity 不外泄给不匹配的消费方
 5. **service + impl**：接口 `extends IService<T>`（注意 import 是 `com.baomidou.mybatisplus.spring.service.IService`），实现 `extends ServiceImpl`；业务失败抛 `BusinessException`；状态用 `private static final int` 常量；分页 size 钳制上限；对外查询记得 `status=1` 过滤
-6. **controller**：只做接参（`@Valid`）→ 调 service → 包 `Result`；`@Tag`/`@Operation` 注解齐全；路径 `/api/v1/` 版本化、名词复数、多词 kebab-case
+6. **controller**：只做接参（`@Valid`）→ 调 service → 包 `Result`；`@Tag`/`@Operation` 注解齐全；路径 `/tsa/` 统一前缀、名词复数、多词 kebab-case
 
 每个类内部顺序：常量 → 注入字段（`@RequiredArgsConstructor` + final，禁 `@Autowired` 字段注入）→ public 方法 → private 辅助方法。
 

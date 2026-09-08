@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -23,7 +25,12 @@ import java.time.LocalDateTime;
 @Data
 public abstract class BaseEntity {
 
+    /**
+     * 主键序列化为字符串输出：与前端契约一致（id 一律字符串），
+     * 同时避免 Long 超过 2^53 时前端 JS number 精度丢失。数据库里仍是 BIGINT。
+     */
     @TableId(type = IdType.AUTO)
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     /** 创建时间：插入时自动填充 */

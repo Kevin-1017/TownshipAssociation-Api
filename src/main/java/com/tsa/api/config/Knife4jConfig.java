@@ -18,7 +18,7 @@ public class Knife4jConfig {
     public OpenAPI tsaOpenAPI() {
         return new OpenAPI().info(new Info()
                 .title("乡会项目后端 API")
-                .description("服务 uni-app 小程序与 React 官网的统一后端。所有业务接口以 /api/v1 开头。")
+                .description("服务 uni-app 小程序与 React 官网的统一后端。所有业务接口以 /tsa 开头。")
                 .version("v0.0.1"));
     }
 }

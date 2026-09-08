@@ -44,7 +44,7 @@ public class MemberSaveRequest {
     private Integer graduationYear;
 
     @Size(max = 32, message = "行业最长 32 个字符")
-    @Schema(description = "所属行业", example = "互联网")
+    @Schema(description = "所属行业（字典 code，见前端 constants/industry.ts）", example = "internet")
     private String industry;
 
     @NotBlank(message = "省份不能为空")

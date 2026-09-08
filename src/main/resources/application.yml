@@ -15,9 +15,11 @@ spring:
   # 若后续 knife4j 发布兼容版本，删掉本段即可恢复全部增强能力。
   autoconfigure:
     exclude: com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration
-  # 统一时间序列化格式（否则前端会收到 ISO 数组格式，处理麻烦）
+  # 时间序列化：date-format 只对 java.util.Date 生效；
+  # LocalDateTime 的 ISO 8601 带时区格式（2026-09-08T08:43:35+08:00）
+  # 在 JacksonConfig 里统一配置 —— 契约要求带时区，小程序 iOS 端也才能正确解析。
   jackson:
-    date-format: yyyy-MM-dd HH:mm:ss
+    date-format: "yyyy-MM-dd'T'HH:mm:ssXXX"
     time-zone: GMT+8
     serialization:
       write-dates-as-timestamps: false
@@ -30,7 +32,10 @@ mybatis-plus:
 
 # Sa-Token 官方文档：https://sa-token.cc
 sa-token:
-  token-name: tsa-token        # 前端请求头携带 token 的字段名
+  # 与前端契约对齐：请求头 Authorization: Bearer <token>
+  # （token-name + token-prefix 组合，Sa-Token 会自动剥掉 "Bearer " 前缀）
+  token-name: Authorization
+  token-prefix: Bearer
   timeout: 604800              # token 有效期 7 天
   active-timeout: -1           # 不做临时冻结
   is-concurrent: true          # 允许同一账号多端在线
@@ -50,9 +55,13 @@ knife4j:
 # ------- 业务配置占位（第二期启用，先留好结构） -------
 tsa:
   wechat:
-    # 小程序 appid/secret：登录接口(code2session)使用，通过环境变量注入，切勿把明文提交进 Git
+    # 小程序 appid/secret：code2session（二期登录）与 getuserphonenumber（乡会手机号核验）
+    # 共用同一对凭据，通过环境变量注入，切勿把明文提交进 Git
     app-id: ${WECHAT_APP_ID:}
     app-secret: ${WECHAT_APP_SECRET:}
+    # 手机号核验逃生通道：true 时把换号 code 原样当手机号返回（本地联调用，
+    # 无企业认证主体时调不了真实换号接口）。生产环境必须为 false！
+    mock-mode: ${WECHAT_MOCK_MODE:false}
   map:
     # 腾讯位置服务 key：地理编码/逆地理编码使用
     qq-key: ${QQ_MAP_KEY:}

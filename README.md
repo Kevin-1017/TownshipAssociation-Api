@@ -33,9 +33,9 @@ mysql -uroot -p < sql/schema.sql
 看到 `Tomcat started on port 8080` 即成功，验证：
 
 ```bash
-curl http://localhost:8080/api/v1/health
-curl "http://localhost:8080/api/v1/members?page=1&size=5"
-curl http://localhost:8080/api/v1/members/map-data
+curl http://localhost:8080/tsa/health
+curl "http://localhost:8080/tsa/members?page=1&size=5"
+curl http://localhost:8080/tsa/members/map-data
 ```
 
 ## 常用命令

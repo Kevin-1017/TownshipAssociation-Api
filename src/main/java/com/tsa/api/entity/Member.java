@@ -52,6 +52,29 @@ public class Member extends BaseEntity {
     @Schema(description = "手机号（不对外返回）", hidden = true)
     private String phone;
 
+    @Schema(description = "区/县")
+    private String district;
+
+    @Schema(description = "工作单位")
+    private String company;
+
+    @Schema(description = "职务/头衔")
+    private String title;
+
+    @Schema(description = "毕业院校")
+    private String school;
+
+    @Schema(description = "专业")
+    private String major;
+
+    /** 微信号与手机号同类敏感：实体序列化出口统一屏蔽，详情接口在 Service 层按 contractVisible 显式裁剪 */
+    @JsonIgnore
+    @Schema(description = "微信号（不对外返回）", hidden = true)
+    private String wechatId;
+
+    @Schema(description = "联系方式可见：0 否 / 1 是（后端据此裁掉联系方式字段）")
+    private Integer contactVisible;
+
     @Schema(description = "审核状态：0 待审核 / 1 已通过 / 2 已拒绝")
     private Integer status;
 

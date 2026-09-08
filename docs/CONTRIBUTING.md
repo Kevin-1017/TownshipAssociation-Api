@@ -96,7 +96,7 @@ Controller ──→ Service ──→ Mapper ──→ 数据库
 | 出参裁剪对象 | `XxxVO` | `MapMarkerVO` |
 | 方法 | camelCase、动词开头；查询用 `get/list/page`，写操作用 `save/update/remove` | `pageQuery` / `listMapMarkers` / `register` |
 | 常量 | UPPER_SNAKE_CASE | `STATUS_APPROVED` |
-| REST 路径 | `/api/v1/` 版本化 + 名词复数，多词用 kebab-case | `/api/v1/members/map-data` |
+| REST 路径 | `/tsa/` 统一前缀 + 名词复数，多词用 kebab-case | `/tsa/members/map-data` |
 | 数据库表/字段 | snake_case，表名单数 | `member` / `activity_registration` / `created_at` |
 | 包名 | 全小写、无下划线 | `com.tsa.api.service.impl` |
 
@@ -135,7 +135,7 @@ public 在前、private 在后；辅助方法不要甩到文件末尾让人来�
 ### 3.6 常量、魔法值与错误码
 
 - 零容忍魔法值：状态一律定义 `private static final int STATUS_APPROVED = 1;`（参考 `MemberServiceImpl`）
-- 新错误码进 `ResultCode` 枚举按模块分段（成员 10xx、活动 11xx、公告 12xx），并同步更新 API.md 状态码表
+- 新错误码进 `ResultCode` 枚举按模块分段（成员 10xx、活动 11xx、公告 12xx、乡会身份 13xx），并同步更新 API.md 状态码表
 
 ### 3.7 注释
 

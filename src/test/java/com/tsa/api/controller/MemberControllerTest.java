@@ -56,7 +56,7 @@ class MemberControllerTest {
         request.setLat(new java.math.BigDecimal("30.57"));
         request.setLng(new java.math.BigDecimal("104.06"));
 
-        mockMvc.perform(post("/api/v1/members")
+        mockMvc.perform(post("/tsa/members")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -79,7 +79,7 @@ class MemberControllerTest {
         request.setLat(new java.math.BigDecimal("30.57"));
         request.setLng(new java.math.BigDecimal("104.06"));
 
-        mockMvc.perform(post("/api/v1/members")
+        mockMvc.perform(post("/tsa/members")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -87,13 +87,118 @@ class MemberControllerTest {
     }
 
     @Test
+    @DisplayName("GET /members - 分页响应应为契约形状 data.list/total/page/pageSize")
+    void pageShouldReturnContractShape() throws Exception {
+        com.tsa.api.dto.MemberVO vo = new com.tsa.api.dto.MemberVO();
+        vo.setId(1L);
+        vo.setName("张三");
+        com.tsa.api.dto.PageVO<com.tsa.api.dto.MemberVO> pageVO =
+                new com.tsa.api.dto.PageVO<>(java.util.List.of(vo), 1L, 1L, 20L);
+        Mockito.when(memberService.pageQuery(ArgumentMatchers.any())).thenReturn(pageVO);
+
+        mockMvc.perform(get("/tsa/members").param("page", "1").param("pageSize", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.list").isArray())
+                .andExpect(jsonPath("$.data.list[0].id").value("1"))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.page").value(1))
+                .andExpect(jsonPath("$.data.pageSize").value(20))
+                // 公开 VO 不允许出现登录凭证字段
+                .andExpect(jsonPath("$.data.list[0].openid").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("POST /members - 注册成功应返回字符串形式的新成员 id")
+    void registerShouldReturnStringId() throws Exception {
+        com.tsa.api.entity.Member saved = new com.tsa.api.entity.Member();
+        saved.setId(123L);
+        Mockito.when(memberService.register(ArgumentMatchers.any())).thenReturn(saved);
+
+        MemberSaveRequest request = new MemberSaveRequest();
+        request.setOpenid("wx-openid-test");
+        request.setName("张三");
+        request.setGender(1);
+        request.setProvince("四川省");
+        request.setCity("成都市");
+        request.setLat(new java.math.BigDecimal("30.57"));
+        request.setLng(new java.math.BigDecimal("104.06"));
+
+        mockMvc.perform(post("/tsa/members")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value("123"));
+    }
+
+    @Test
     @DisplayName("GET /members/map-data - 正常返回时应带 data 数组")
     void mapDataShouldReturnOk() throws Exception {
         Mockito.when(memberService.listMapMarkers()).thenReturn(java.util.List.of());
 
-        mockMvc.perform(get("/api/v1/members/map-data"))
+        mockMvc.perform(get("/tsa/members/map-data"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    @DisplayName("GET /members/{id} - 带 X-Assoc-Token 时应返回详情数据")
+    void detailShouldReturnOkWithAssocToken() throws Exception {
+        com.tsa.api.dto.MemberDetailVO vo = new com.tsa.api.dto.MemberDetailVO();
+        vo.setId(1L);
+        vo.setName("张三");
+        vo.setContactVisible(true);
+        Mockito.when(memberService.getDetail(ArgumentMatchers.eq(1L), ArgumentMatchers.anyString()))
+                .thenReturn(vo);
+
+        mockMvc.perform(get("/tsa/members/1").header("X-Assoc-Token", "mock-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.name").value("张三"))
+                .andExpect(jsonPath("$.data.id").value("1"));
+    }
+
+    @Test
+    @DisplayName("GET /members/{id} - 未核验（Service 抛 1301）时应返回业务错误码 1301")
+    void detailShouldReturn1301WhenNotAssoc() throws Exception {
+        // 用 any() 而非 anyString()：不带 header 时 assocToken 是 null，anyString 匹配不上
+        Mockito.when(memberService.getDetail(ArgumentMatchers.eq(1L), ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ResultCode.ASSOC_MEMBER_ONLY));
+
+        mockMvc.perform(get("/tsa/members/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(ResultCode.ASSOC_MEMBER_ONLY.getCode()));
+    }
+
+    @Test
+    @DisplayName("GET /members/{id} - 成员不存在（Service 抛 1002）时应返回业务错误码 1002")
+    void detailShouldReturn1002WhenNotFound() throws Exception {
+        Mockito.when(memberService.getDetail(ArgumentMatchers.eq(999L), ArgumentMatchers.anyString()))
+                .thenThrow(new BusinessException(ResultCode.DATA_NOT_FOUND));
+
+        mockMvc.perform(get("/tsa/members/999").header("X-Assoc-Token", "mock-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(ResultCode.DATA_NOT_FOUND.getCode()));
+    }
+
+    @Test
+    @DisplayName("GET /members/{id} - contactVisible=false 时响应不得出现 phone/wechatId 字段（剔除而非 null）")
+    void detailShouldOmitContactFieldsWhenInvisible() throws Exception {
+        com.tsa.api.dto.MemberDetailVO vo = new com.tsa.api.dto.MemberDetailVO();
+        vo.setId(2L);
+        vo.setName("李四");
+        vo.setContactVisible(false);
+        vo.setPhone(null);
+        vo.setWechatId(null);
+        Mockito.when(memberService.getDetail(ArgumentMatchers.eq(2L), ArgumentMatchers.anyString()))
+                .thenReturn(vo);
+
+        mockMvc.perform(get("/tsa/members/2").header("X-Assoc-Token", "mock-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.contactVisible").value(false))
+                .andExpect(jsonPath("$.data.phone").doesNotExist())
+                .andExpect(jsonPath("$.data.wechatId").doesNotExist());
     }
 }

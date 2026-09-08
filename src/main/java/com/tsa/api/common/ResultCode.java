@@ -30,7 +30,12 @@ public enum ResultCode {
     /** 业务错误：成员 openid 已注册 */
     MEMBER_ALREADY_EXISTS(1001, "该微信已注册过成员"),
     /** 业务错误：通用数据不存在 */
-    DATA_NOT_FOUND(1002, "数据不存在");
+    DATA_NOT_FOUND(1002, "数据不存在"),
+
+    /** 业务错误（13xx 乡会身份/鉴权）：非乡会用户访问受限资料；详情接口未核验/token 失效也返此码（而非 401，避免前端误触发"清登录态跳转"） */
+    ASSOC_MEMBER_ONLY(1301, "查看资料仅限乡会会员"),
+    /** 业务错误（13xx 乡会身份/鉴权）：微信手机号核验失败（code 无效/已消费/微信侧限频等），可重试 */
+    WECHAT_PHONE_VERIFY_FAILED(1302, "手机号核验失败，请重试");
 
     private final int code;
     private final String message;

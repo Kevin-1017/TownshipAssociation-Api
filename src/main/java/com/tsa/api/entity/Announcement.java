@@ -19,6 +19,9 @@ public class Announcement extends BaseEntity {
     @Schema(description = "标题")
     private String title;
 
+    @Schema(description = "列表摘要（正文摘录，列表页展示用）")
+    private String summary;
+
     @Schema(description = "正文内容")
     private String content;
 

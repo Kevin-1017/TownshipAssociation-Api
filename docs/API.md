@@ -61,6 +61,17 @@
 | POST | `/tsa/auth/verify-phone` | 乡会身份核验（getPhoneNumber 动态 code 换手机号 → 比对内部名册 association_member；命中返 verified=true+token，未命中返 verified=false 仍是 HTTP 200） |
 | GET | `/tsa/notices` | 公告列表（置顶优先；字段含 summary 摘要与 pinned 布尔） |
 | GET | `/tsa/notices/{id}` | 公告详情（不存在返回 1002） |
+| GET | `/tsa/community/posts` | 社区动态分页列表（参数：page,pageSize,type,cuisine,region,keyword；按发布时间倒序；不下发评论树） |
+| GET | `/tsa/community/posts/{id}` | 动态详情（含 commentsList；不存在返回 1002） |
+| POST | `/tsa/community/posts` | 发布动态（一期无登录，author 为自由填写昵称；返回新动态 id 字符串） |
+| POST | `/tsa/community/posts/{id}/like` | 点赞 +1（返回点赞后总数；动态不存在 1002） |
+| POST | `/tsa/community/posts/{id}/comments` | 发表评论（返回新建评论对象；动态不存在 1002） |
+| GET | `/tsa/foundation` | 基金会首页聚合（rewards 奖励类别 + donations 捐赠；amount 单位元） |
+| GET | `/tsa/foundation/rewards` | 奖励明细（categories 类别名 + records 获奖记录，含 categoryName） |
+| GET | `/tsa/foundation/donations` | 捐赠明细（按日期倒序） |
+| POST/PUT/DELETE | `/tsa/foundation/categories[/{id}]` | 奖项类别增删改（一期不鉴权，管理后台二期收口到 `/tsa/admin/**`） |
+| POST/PUT/DELETE | `/tsa/foundation/records[/{id}]` | 获奖记录增删改 |
+| POST/PUT/DELETE | `/tsa/foundation/donations[/{id}]` | 捐赠鸣谢增删改 |
 
 ### 分页响应 `data` 结构（`dto/PageVO`，与前端契约一致）
 
@@ -71,10 +82,13 @@
 注意不是 MyBatis-Plus IPage 的原始形状（records/current/size/pages）——
 Service 层用 `PageVO.of(ipage)` 做一次转换。
 
-### 二期待实现（小程序已在 mock 中调用，实现前先对齐契约）
+### 推迟实现（本轮「登录/身份/地图先不做」，社区与基金会已上线）
 
-`/tsa/auth/wechat-login`、`/tsa/user/me`、`/tsa/members/stats/province`、
-`/tsa/events` 系列（活动表已建）。
+- 登录/身份：`/tsa/auth/wechat-login`、`/tsa/user/me`；成员详情 `/tsa/members/{id}` 的
+  X-Assoc-Token 身份闸门（接口已实现，联调依赖 verify-phone，暂按推迟处理）
+- 地图：`/tsa/members/map-data`、`/tsa/members/stats/province`（供地图区域着色/排行榜）
+- 活动：`/tsa/events` 系列**不再做后端**——改由跳转公众号文章承载，小程序 `pages/event/detail`
+  为早期废弃原型，后续替换（`activity` 表暂留）
 
 ## 新增接口 Checklist（学生模板）
 

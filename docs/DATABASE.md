@@ -54,6 +54,27 @@ username 唯一，password_hash 存 BCrypt 哈希（绝不明文），role：1�
 字段：phone / name / role（会长/理事/会员等）/ remark（仅内部可见）/
 member_ref_id（二期映射 member.id，实现登录态自动识别乡会身份，一期恒 NULL）。
 
+## 社区与基金会（本轮新增）
+
+### community_post 社区动态（美食基地 / 校园广场共用）
+type（`food`/`campus`）/ author（一期无登录，自由填写昵称）/ avatar / title / content /
+images（**JSON 列**，URL 数组，实体用 `JacksonTypeHandler` + `autoResultMap` 映射 `List<String>`）/
+cuisine / region（仅美食动态）/ likes / publish_time。**评论数不落库**，由 `community_comment` 派生，避免计数与子表不一致。
+
+### community_comment 社区评论
+post_id / author / avatar / content / likes / create_time。逻辑外键关联 `community_post`（无物理外键）。
+
+### foundation_reward_category 基金会奖项类别
+name / sponsor / amount（**单位：元**）/ sort。首页「奖励」卡片与详情页分组的依据。
+
+### foundation_reward_record 获奖记录
+category_id / recipient / amount（元）。删除类别时连带软删其下记录（`@Transactional`）。
+
+### foundation_donation 捐赠鸣谢
+donor_name / amount（元）/ donation_date。首页与详情页 tab1 共用，按日期倒序。
+
+> 说明：基金会写接口（增删改）一期不鉴权，放在非 admin 路径下；管理后台二期上线后收口到 `/tsa/admin/**`。
+
 ## 约定（学生必读）
 
 1. **逻辑删除**：禁止物理 DELETE，删除即 `UPDATE ... SET deleted=1`（MyBatis-Plus `@TableLogic` 自动处理）。

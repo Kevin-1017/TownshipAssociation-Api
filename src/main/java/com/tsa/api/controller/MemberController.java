@@ -8,7 +8,9 @@ import com.tsa.api.dto.MemberQuery;
 import com.tsa.api.dto.MemberSaveRequest;
 import com.tsa.api.dto.MemberVO;
 import com.tsa.api.dto.PageVO;
+import com.tsa.api.dto.ProvinceStatVO;
 import com.tsa.api.entity.Member;
+import com.tsa.api.service.AuthService;
 import com.tsa.api.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,11 +43,21 @@ import java.util.List;
 public class MemberController {
 
     private final MemberService memberService;
+    // B16 防钓鱼建档：注册所需的 openid 从 Bearer 登录态推导，请求体已删 openid 字段。
+    // 注入的是 AuthService 而非在本地读 StpUtil —— 拒绝规则（assoc- 前缀等）单点收敛在鉴权侧
+    private final AuthService authService;
 
     @Operation(summary = "成员分页列表", description = "支持按省份、城市、行业筛选和姓名/简介关键字搜索；仅返回审核通过的成员")
     @GetMapping
     public Result<PageVO<MemberVO>> page(MemberQuery query) {
         return Result.ok(memberService.pageQuery(query));
+    }
+
+    @Operation(summary = "省份分布统计", description = "小程序首页/我的页「乡友分布」数据源（契约 C4）："
+            + "仅统计审核通过成员，按人数降序；公开接口")
+    @GetMapping("/stats/province")
+    public Result<List<ProvinceStatVO>> statsProvince() {
+        return Result.ok(memberService.listProvinceStats());
     }
 
     @Operation(summary = "地图打点数据", description = "小程序地图页专用：仅返回审核通过且有坐标的成员，字段裁剪到最小")
@@ -54,10 +66,12 @@ public class MemberController {
         return Result.ok(memberService.listMapMarkers());
     }
 
-    @Operation(summary = "成员注册", description = "小程序端填写资料后提交，状态为待审核，由管理后台审核；返回新成员 id（字符串形式）")
+    @Operation(summary = "成员注册", description = "小程序端填写资料后提交，状态为待审核，由管理后台审核；"
+            + "需 Bearer 登录态，openid 由服务端从会话推导（请求体自报无效，修订 A7/B16）；返回新成员 id（字符串形式）")
     @PostMapping
     public Result<String> register(@Valid @RequestBody MemberSaveRequest request) {
-        Member saved = memberService.register(request);
+        // currentOpenid：未登录/乡会令牌（assoc-）冒充一律 401 壳 —— 与 /tsa/user/** 同一规则单点
+        Member saved = memberService.register(request, authService.currentOpenid());
         return Result.ok(String.valueOf(saved.getId()));
     }
 

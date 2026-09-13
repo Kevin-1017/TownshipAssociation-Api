@@ -3,6 +3,10 @@
 # ===================================================
 server:
   port: 8080
+  # 反代部署必开（修订 A8）：AuthRateLimitInterceptor 按 getRemoteAddr() 计数，
+  # 套 nginx 后不开关则全体用户共享一个限频桶（10/分 ≈ 全球限流）。
+  # 仅在确认上游代理受信后再放开 —— 否则 X-Forwarded-For 可被客户端伪造直接绕过限频。
+  # forward-headers-strategy: native
 
 spring:
   application:
@@ -23,6 +27,14 @@ spring:
     time-zone: GMT+8
     serialization:
       write-dates-as-timestamps: false
+  # multipart 容器级阈值（契约 C8 配套）。Boot 默认 max-file-size=1MB 会把合法的 2MB 头像
+  # 直接掐死成 500 —— 必须放开；业务上限 2MB 由 FileController 显式校验（才能给出
+  # 「文件超限或类型不支持」的 400 提示），这里的值只是防超大 body 打满内存/磁盘的兜底，
+  # 击穿时由 GlobalExceptionHandler 翻译成同一句 400。
+  servlet:
+    multipart:
+      max-file-size: 3MB
+      max-request-size: 3MB
 
 mybatis-plus:
   configuration:
@@ -62,6 +74,20 @@ tsa:
     # 手机号核验逃生通道：true 时把换号 code 原样当手机号返回（本地联调用，
     # 无企业认证主体时调不了真实换号接口）。生产环境必须为 false！
     mock-mode: ${WECHAT_MOCK_MODE:false}
+    # 微信登录逃生通道：true 时跳过 jscode2session、固定回 openid=mock-openid-local（本地无凭据联调用）。
+    # 与 mock-mode 是两把独立开关、可各开各的分别验证；生产环境必须为 false
+    # （WechatClientImpl 启动守卫：非 dev/test 环境任一开关为 true 直接拒绝启动）！
+    login-mock-mode: ${WECHAT_LOGIN_MOCK_MODE:false}
+  rate-limit:
+    # /tsa/auth/** 按 IP 固定 60s 窗口限频（AuthRateLimitInterceptor，内存实现=单实例假设）：
+    # 防 verify-phone 被伪造手机号爆破、防 wechat-login 被脚本刷穿凭据/出口带宽、防 admin-login 口令爆破。超限回业务码 1306
+    login-per-minute: ${RATE_LIMIT_LOGIN_PER_MIN:10}
+    verify-phone-per-minute: ${RATE_LIMIT_VERIFY_PER_MIN:5}
+    admin-login-per-minute: ${RATE_LIMIT_ADMIN_LOGIN_PER_MIN:5}
+  files:
+    # 文件上传本地磁盘根目录（契约 C8，第 2 棒 FileStorageService 消费本键）：
+    # 部署时经环境变量换到持久卷；prod 终态切 OSS 后此键废弃
+    dir: ${TSA_FILES_DIR:./upload-data}
   map:
     # 腾讯位置服务 key：地理编码/逆地理编码使用
     qq-key: ${QQ_MAP_KEY:}

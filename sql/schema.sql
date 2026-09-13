@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS member (
     gender          TINYINT         NOT NULL DEFAULT 0 COMMENT '0未知/1男/2女',
     graduation_year SMALLINT        NULL COMMENT '届别（入学/毕业年份）',
     industry        VARCHAR(32)     NULL COMMENT '所属行业',
-    province        VARCHAR(16)     NOT NULL COMMENT '省份',
-    city            VARCHAR(16)     NOT NULL COMMENT '城市',
+    province        VARCHAR(16)     NULL COMMENT '省份（本人自报资料可空，待秘书处审核时补录）',
+    city            VARCHAR(16)     NULL COMMENT '城市（本人自报资料可空，待秘书处审核时补录）',
     lat             DECIMAL(10, 6)  NULL COMMENT '纬度',
     lng             DECIMAL(10, 6)  NULL COMMENT '经度',
     phone           VARCHAR(16)     NULL COMMENT '手机号（仅服务端可见）',
@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS member (
     wechat_id       VARCHAR(32)     NULL COMMENT '微信号（仅服务端可见）',
     contact_visible TINYINT         NOT NULL DEFAULT 0 COMMENT '联系方式可见 0否/1是',
     status          TINYINT         NOT NULL DEFAULT 0 COMMENT '0待审核/1已通过/2已拒绝',
+    source          TINYINT         NOT NULL DEFAULT 0 COMMENT '来源:0后台种子/1本人提交',
     intro           VARCHAR(200)    NULL COMMENT '个人简介',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -70,13 +71,16 @@ CREATE TABLE IF NOT EXISTS announcement (
 ) ENGINE = InnoDB COMMENT '乡会公告';
 
 -- ------------------------------------------------------------
--- 3. 活动表（二期开放接口，表先建好）
+-- 3. 活动表（v1.2 D2「跳公众号文章」轻量形态：只读两接口读本表；
+--    正文不进小程序，article_url 放公众号永久链接，封面/摘要在列表卡片展示）
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS activity (
     id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
     title           VARCHAR(64)     NOT NULL COMMENT '活动标题',
     cover_url       VARCHAR(255)    NULL COMMENT '封面图',
+    summary         VARCHAR(500)    NULL COMMENT '一句话简介（小程序列表卡片用，正文在公众号）',
     content         TEXT            NULL COMMENT '活动详情',
+    article_url     VARCHAR(500)    NULL COMMENT '公众号文章永久链接（/s/xxx，点击调 wx.openOfficialAccountArticle）',
     location        VARCHAR(128)    NULL COMMENT '地点描述',
     lat             DECIMAL(10, 6)  NULL,
     lng             DECIMAL(10, 6)  NULL,
@@ -199,6 +203,16 @@ WHERE openid = 'demo_openid_01';
 -- ALTER TABLE member ADD COLUMN major VARCHAR(64) NULL COMMENT '专业';
 -- ALTER TABLE member ADD COLUMN wechat_id VARCHAR(32) NULL COMMENT '微信号（仅服务端可见）';
 -- ALTER TABLE member ADD COLUMN contact_visible TINYINT NOT NULL DEFAULT 0 COMMENT '联系方式可见 0否/1是';
+--
+-- v1.2 登录一期增量（D2 活动两列 + D3/C7 来源列与省市值字段）：
+-- 新库无需执行（上方 CREATE 段已含）；已有开发库放开逐条执行。
+-- province/city 放宽可空是「本人先建档、秘书处审核时补录地区」的前提，
+-- 已有行的存量值不受影响（NOT NULL→NULL 是宽松化，安全）。
+-- ALTER TABLE activity ADD COLUMN summary VARCHAR(500) NULL COMMENT '一句话简介（小程序列表卡片用，正文在公众号）' AFTER cover_url;
+-- ALTER TABLE activity ADD COLUMN article_url VARCHAR(500) NULL COMMENT '公众号文章永久链接（/s/xxx，点击调 wx.openOfficialAccountArticle）' AFTER content;
+-- ALTER TABLE member ADD COLUMN source TINYINT NOT NULL DEFAULT 0 COMMENT '来源:0后台种子/1本人提交' AFTER status;
+-- ALTER TABLE member MODIFY COLUMN province VARCHAR(16) NULL COMMENT '省份（本人自报资料可空，待秘书处审核时补录）';
+-- ALTER TABLE member MODIFY COLUMN city VARCHAR(16) NULL COMMENT '城市（本人自报资料可空，待秘书处审核时补录）';
 
 -- ============================================================
 -- 7. 社区动态表（美食基地 / 校园广场；一期无登录，发布者为自由填写昵称）
@@ -280,10 +294,11 @@ CREATE TABLE IF NOT EXISTS foundation_reward_record (
 -- 11. 基金会捐赠鸣谢表（首页 + 详情页 tab1）
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS foundation_donation (
-    id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
-    donor_name    VARCHAR(64)     NOT NULL COMMENT '捐赠人姓名',
-    amount        BIGINT          NOT NULL COMMENT '捐赠金额（元）',
-    donation_date DATETIME        NOT NULL COMMENT '捐赠日期',
+    id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+    donor_name     VARCHAR(64)     NOT NULL COMMENT '捐赠人姓名',
+    amount         BIGINT          NOT NULL COMMENT '捐赠金额（元）',
+    amount_visible TINYINT         NOT NULL DEFAULT 0 COMMENT '金额是否对外展示（秘书处口径:默认保密,显式公开的才下发）',
+    donation_date  DATETIME        NOT NULL COMMENT '捐赠日期',
     created_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted       TINYINT         NOT NULL DEFAULT 0,
@@ -323,10 +338,32 @@ SELECT id, '张明浩', 6000 FROM foundation_reward_category WHERE name = '优�
 INSERT INTO foundation_reward_record (category_id, recipient, amount)
 SELECT id, '刘雨欣', 5000 FROM foundation_reward_category WHERE name = '校园活动支持';
 
-INSERT INTO foundation_donation (donor_name, amount, donation_date)
+-- 金额展示口径（2026-09-13 秘书处）：只有坤坤这条公开金额，其余保密（amount 照常入库，仅不下发）
+INSERT INTO foundation_donation (donor_name, amount, amount_visible, donation_date)
 VALUES
-    ('坤坤',     2000000, '2026-08-10 00:00:00'),
-    ('王宇彬',   500000,  '2026-08-05 00:00:00'),
-    ('黄某某',   5000,    '2026-07-15 00:00:00'),
-    ('蔡某某',   3000,    '2026-08-01 00:00:00'),
-    ('林某某',   10000,   '2026-08-10 00:00:00');
+    ('坤坤',     2000000, 1, '2026-08-10 00:00:00'),
+    ('王宇彬',   500000,  0, '2026-08-05 00:00:00'),
+    ('黄某某',   5000,    0, '2026-07-15 00:00:00'),
+    ('蔡某某',   3000,    0, '2026-08-01 00:00:00'),
+    ('林某某',   10000,   0, '2026-08-10 00:00:00');
+
+-- ------------------------------------------------------------
+-- 12. 小程序登录用户埋点表（计划 v1.2 D1：「来过」层）
+--     三层身份各归各位：wechat_user(登录过的访客) → member(乡贤名册)
+--     → association_member(乡会核验)。统计口径：总用户=COUNT(*)、
+--     新增=first_login_at 区间、活跃=last_login_at 区间。
+--     注意：本表刻意不带 deleted 三件套（埋点表只进不删，逻辑删除对
+--     统计口径毫无意义），WechatUser 实体因此不继承 BaseEntity —— 继承会
+--     让 @TableLogic 在查询上拼 deleted=0 直接报 Unknown column。
+--     已有库重跑全文若此行报「table already exists」属正常，跳过即可
+--     （此处按计划 D1 原文逐字落库，未套 IF NOT EXISTS）。
+-- ------------------------------------------------------------
+CREATE TABLE wechat_user (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  openid VARCHAR(64) NOT NULL,
+  unionid VARCHAR(64) NULL,
+  first_login_at DATETIME NOT NULL,
+  last_login_at DATETIME NOT NULL,
+  login_count INT NOT NULL DEFAULT 1,
+  UNIQUE KEY uk_openid (openid)
+) COMMENT '小程序登录用户埋点(访客),区别于 association_member 名册与 member 乡贤档案';

@@ -7,6 +7,7 @@ import com.tsa.api.dto.MemberQuery;
 import com.tsa.api.dto.MemberSaveRequest;
 import com.tsa.api.dto.MemberVO;
 import com.tsa.api.dto.PageVO;
+import com.tsa.api.dto.ProvinceStatVO;
 import com.tsa.api.entity.Member;
 
 import java.util.List;
@@ -25,8 +26,16 @@ public interface MemberService extends IService<Member> {
     /** 地图打点数据（仅审核通过且有坐标的成员，轻量字段） */
     List<MapMarkerVO> listMapMarkers();
 
-    /** 注册/更新成员资料；openid 已存在时抛 BusinessException */
-    Member register(MemberSaveRequest request);
+    /**
+     * 注册建档（openid 已存在时抛 BusinessException）。
+     *
+     * <p>openid 由 Controller 从 Bearer loginId 推导传入（契约 C9，修订 A7/B16 防钓鱼：
+     * 请求体已删除 openid 字段，身份只认服务端会话）。
+     */
+    Member register(MemberSaveRequest request, String openid);
+
+    /** 省份分布统计（契约 C4）：仅 status=1 且未逻辑删除的成员，按人数降序 */
+    List<ProvinceStatVO> listProvinceStats();
 
     /**
      * 成员详情（乡会用户专享）。

@@ -78,6 +78,9 @@ public class Member extends BaseEntity {
     @Schema(description = "审核状态：0 待审核 / 1 已通过 / 2 已拒绝")
     private Integer status;
 
+    @Schema(description = "来源：0 后台种子 / 1 本人提交（v1.2 D3 profile 真保存建档时置 1）")
+    private Integer source;
+
     @Schema(description = "个人简介")
     private String intro;
 }

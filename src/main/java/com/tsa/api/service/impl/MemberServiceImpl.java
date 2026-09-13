@@ -2,6 +2,7 @@ package com.tsa.api.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tsa.api.common.BusinessException;
@@ -12,6 +13,7 @@ import com.tsa.api.dto.MemberQuery;
 import com.tsa.api.dto.MemberSaveRequest;
 import com.tsa.api.dto.MemberVO;
 import com.tsa.api.dto.PageVO;
+import com.tsa.api.dto.ProvinceStatVO;
 import com.tsa.api.entity.Member;
 import com.tsa.api.mapper.MemberMapper;
 import com.tsa.api.service.AuthService;
@@ -22,6 +24,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.Year;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 成员业务实现。
@@ -85,18 +88,39 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
     }
 
     @Override
-    public Member register(MemberSaveRequest request) {
+    public Member register(MemberSaveRequest request, String openid) {
+        // openid 由 Controller 从 Bearer loginId 推导传入（契约 C9 / 修订 A7 B16）：
+        // 查重与落库都只认这个服务端值，客户端自报通道已随 MemberSaveRequest 删字段而关闭
         Member existing = this.getOne(new LambdaQueryWrapper<Member>()
-                .eq(Member::getOpenid, request.getOpenid()));
+                .eq(Member::getOpenid, openid));
         if (existing != null) {
             throw new BusinessException(ResultCode.MEMBER_ALREADY_EXISTS);
         }
 
         Member member = BeanUtil.copyProperties(request, Member.class);
+        member.setOpenid(openid);
         // 新注册一律待审核，由管理后台通过后才对外可见（审核接口二期做）
         member.setStatus(STATUS_PENDING);
         this.save(member);
         return member;
+    }
+
+    @Override
+    public List<ProvinceStatVO> listProvinceStats() {
+        // 聚合查询没有实体可映射，listMaps 是唯一形状；QueryWrapper（非 Lambda 版）因为
+        // select 里是 SQL 片段（COUNT(*) AS cnt）不是方法引用能表达的。
+        // @TableLogic 自动拼 deleted=0，与分页列表同一可见面口径。
+        List<Map<String, Object>> rows = this.listMaps(new QueryWrapper<Member>()
+                .select("province", "COUNT(*) AS cnt")
+                .eq("status", STATUS_APPROVED)
+                .groupBy("province")
+                .orderByDesc("cnt"));
+        return rows.stream()
+                .map(row -> new ProvinceStatVO(
+                        (String) row.get("province"),
+                        // COUNT(*) 经 JDBC 可能是 Long/BigInteger，统一走 Number 收口
+                        row.get("cnt") == null ? 0L : ((Number) row.get("cnt")).longValue()))
+                .toList();
     }
 
     @Override

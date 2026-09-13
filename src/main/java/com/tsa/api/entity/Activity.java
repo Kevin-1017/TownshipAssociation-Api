@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 活动表实体（表已建好，接口在第二期开放）。
+ * 活动表实体（v1.2 D2：只读接口 EventController 已上线，正文走公众号文章、报名仍不做）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -23,8 +23,14 @@ public class Activity extends BaseEntity {
     @Schema(description = "封面图 URL")
     private String coverUrl;
 
+    @Schema(description = "一句话简介（小程序列表卡片用，正文在公众号）")
+    private String summary;
+
     @Schema(description = "活动详情")
     private String content;
+
+    @Schema(description = "公众号文章永久链接（/s/xxx，点击调 wx.openOfficialAccountArticle）")
+    private String articleUrl;
 
     @Schema(description = "活动地点描述")
     private String location;

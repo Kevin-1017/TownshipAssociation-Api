@@ -5,6 +5,7 @@ import com.tsa.api.common.BusinessException;
 import com.tsa.api.common.GlobalExceptionHandler;
 import com.tsa.api.common.ResultCode;
 import com.tsa.api.dto.MemberSaveRequest;
+import com.tsa.api.service.AuthService;
 import com.tsa.api.service.MemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,14 +33,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class MemberControllerTest {
 
     private MemberService memberService;
+    private AuthService authService;
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         memberService = Mockito.mock(MemberService.class);
+        authService = Mockito.mock(AuthService.class);
+        // B16：注册所需 openid 由服务端从 Bearer 推导（Controller 注入 AuthService），
+        // standalone 范式下 StpUtil 不存在，桩一个固定 loginId 即可
+        Mockito.when(authService.currentOpenid()).thenReturn("wx-openid-test");
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new MemberController(memberService))
+                .standaloneSetup(new MemberController(memberService, authService))
                 .setControllerAdvice(new GlobalExceptionHandler())   // 挂上全局异常处理器
                 .build();
     }
@@ -48,7 +54,6 @@ class MemberControllerTest {
     @DisplayName("POST /members - 姓名为空时应返回 400 和字段提示")
     void registerShouldFailWhenNameBlank() throws Exception {
         MemberSaveRequest request = new MemberSaveRequest();
-        request.setOpenid("wx-openid-test");
         // name 故意不填
         request.setGender(1);
         request.setProvince("四川省");
@@ -67,11 +72,10 @@ class MemberControllerTest {
     @Test
     @DisplayName("POST /members - openid 重复时应返回业务错误码 1001")
     void registerShouldReturnBizCodeWhenDuplicated() throws Exception {
-        Mockito.when(memberService.register(ArgumentMatchers.any()))
+        Mockito.when(memberService.register(ArgumentMatchers.any(), ArgumentMatchers.anyString()))
                 .thenThrow(new BusinessException(ResultCode.MEMBER_ALREADY_EXISTS));
 
         MemberSaveRequest request = new MemberSaveRequest();
-        request.setOpenid("wx-openid-test");
         request.setName("张三");
         request.setGender(1);
         request.setProvince("四川省");
@@ -113,10 +117,10 @@ class MemberControllerTest {
     void registerShouldReturnStringId() throws Exception {
         com.tsa.api.entity.Member saved = new com.tsa.api.entity.Member();
         saved.setId(123L);
-        Mockito.when(memberService.register(ArgumentMatchers.any())).thenReturn(saved);
+        Mockito.when(memberService.register(ArgumentMatchers.any(), ArgumentMatchers.anyString()))
+                .thenReturn(saved);
 
         MemberSaveRequest request = new MemberSaveRequest();
-        request.setOpenid("wx-openid-test");
         request.setName("张三");
         request.setGender(1);
         request.setProvince("四川省");
@@ -141,6 +145,25 @@ class MemberControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    @DisplayName("GET /members/stats/province - 应原样透传 [{province,count}] 列表（契约 C4）")
+    void statsProvinceShouldReturnContractList() throws Exception {
+        // 降序、仅 status=1 的口径是 Service/SQL 的事（listMaps+groupBy），standalone 层只钉
+        // 「Controller 不改形状、按序透传」——顺序断言同时防住将来有人在 Controller 里画蛇添足地重排
+        Mockito.when(memberService.listProvinceStats()).thenReturn(java.util.List.of(
+                new com.tsa.api.dto.ProvinceStatVO("广东省", 12L),
+                new com.tsa.api.dto.ProvinceStatVO("四川省", 5L)));
+
+        mockMvc.perform(get("/tsa/members/stats/province"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].province").value("广东省"))
+                .andExpect(jsonPath("$.data[0].count").value(12))
+                .andExpect(jsonPath("$.data[1].province").value("四川省"))
+                .andExpect(jsonPath("$.data[1].count").value(5));
     }
 
     @Test

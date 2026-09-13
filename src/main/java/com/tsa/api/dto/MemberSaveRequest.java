@@ -18,14 +18,14 @@ import java.math.BigDecimal;
  *
  * <p>教学要点：请求参数用 DTO 接收并加校验注解，永远不要把校验写在 Service 里手写 if；
  * Controller 方法参数前加 @Valid 即触发校验，失败自动抛 MethodArgumentNotValidException。
+ *
+ * <p><b>本请求体不含 openid（修订 A7/B16）</b>：登录上线前这是死接口，openid 客户端自报无人触发；
+ * 登录上线后它就是钓鱼通道（自报他人/mock openid 预插假档案，受害者本人视角还会看到攻击者的数据）。
+ * openid 一律由 Controller 从 Bearer loginId 推导后传入 Service——防钓鱼靠收口，不靠自觉。
  */
 @Data
 @Schema(description = "成员注册请求")
 public class MemberSaveRequest {
-
-    @NotBlank(message = "openid 不能为空")
-    @Schema(description = "微信 openid（小程序登录获取）")
-    private String openid;
 
     @NotBlank(message = "姓名不能为空")
     @Size(max = 32, message = "姓名最长 32 个字符")
@@ -75,6 +75,6 @@ public class MemberSaveRequest {
     @Schema(description = "个人简介")
     private String intro;
 
-    @Schema(description = "头像 URL（二期接入文件上传后由前端先传后填）")
+    @Schema(description = "头像 URL（先经 POST /tsa/files 上传，回填相对路径，契约 C8）")
     private String avatarUrl;
 }

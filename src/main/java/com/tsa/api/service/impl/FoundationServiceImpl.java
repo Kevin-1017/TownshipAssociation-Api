@@ -82,7 +82,7 @@ public class FoundationServiceImpl implements FoundationService {
                     DonationRecordVO vo = new DonationRecordVO();
                     vo.setId(d.getId());
                     vo.setDonorName(d.getDonorName());
-                    vo.setAmount(d.getAmount());
+                    vo.setAmount(visibleAmount(d));
                     vo.setDate(d.getDonationDate());
                     return vo;
                 })
@@ -224,8 +224,13 @@ public class FoundationServiceImpl implements FoundationService {
         DonationItemVO vo = new DonationItemVO();
         vo.setId(d.getId());
         vo.setDonorName(d.getDonorName());
-        vo.setAmount(d.getAmount());
+        vo.setAmount(visibleAmount(d));
         vo.setDate(d.getDonationDate());
         return vo;
+    }
+
+    /** 保密口径的唯一闸口：amount_visible 非 true 的记录一律不外发金额（库里金额照旧留存） */
+    private Long visibleAmount(FoundationDonation d) {
+        return Boolean.TRUE.equals(d.getAmountVisible()) ? d.getAmount() : null;
     }
 }

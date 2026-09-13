@@ -25,6 +25,10 @@ public class DonationSaveRequest {
     @PositiveOrZero(message = "捐赠金额不能为负")
     private Long amount;
 
+    /** 缺省不传 = 保密（只有显式 true 才对外展示金额） */
+    @Schema(description = "金额是否公开显示（缺省 false）", example = "false")
+    private Boolean amountVisible;
+
     @Schema(description = "捐赠日期（ISO 8601 带时区）", example = "2026-08-10T00:00:00+08:00",
             requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "请填写捐赠日期")

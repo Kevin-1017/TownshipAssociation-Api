@@ -1,0 +1,10 @@
+{
+  "name": "bcrypt-gen",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "本地生成 admin_user 口令的 BCrypt 哈希(改密走 SQL,见目录内 gen.mjs 注释)",
+  "dependencies": {
+    "bcryptjs": "^3.0.2"
+  }
+}

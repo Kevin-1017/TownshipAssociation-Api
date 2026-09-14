@@ -57,6 +57,7 @@ class EventControllerTest {
         vo.setTitle("成都老乡下午茶");
         vo.setCover(null);          // 秘书处还没传封面的常态：键必须在场
         vo.setSummary("茶馆小聚");
+        vo.setArticleUrl(null);     // 未补链接的过渡态：键同样必须在场（web 列表据此置灰）
         vo.setStartTime(LocalDateTime.of(2026, 10, 1, 14, 0, 0));
         vo.setStatus("upcoming");
         return vo;
@@ -82,16 +83,20 @@ class EventControllerTest {
                 // 正文永不外给：字段在 VO 形状上根本不存在（D2 拍板），键出现即为回归
                 .andExpect(jsonPath("$.data.list[0].content").doesNotExist())
                 // cover=null：键必须在场（前端据「键在值 null」走占位图，缺键=结构异常）
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"cover\":null")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"cover\":null")))
+                // articleUrl=null 同理：web 列表卡片直跳公众号，置灰判定依赖键在场
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"articleUrl\":null")));
     }
 
     @Test
-    @DisplayName("GET /events - page/pageSize/year 应原样绑定进 EventQuery 透传给 Service（C5）")
+    @DisplayName("GET /events - page/pageSize/year/yearFrom/yearTo 应原样绑定进 EventQuery 透传给 Service（C5）")
     void pageShouldBindQueryParamsAndPassThrough() throws Exception {
         Mockito.when(eventService.pageQuery(ArgumentMatchers.any()))
                 .thenReturn(new PageVO<>(List.<EventListVO>of(), 0L, 2L, 5L));
 
-        mockMvc.perform(get("/tsa/events").param("page", "2").param("pageSize", "5").param("year", "2026"))
+        mockMvc.perform(get("/tsa/events")
+                        .param("page", "2").param("pageSize", "5")
+                        .param("year", "2026").param("yearFrom", "2024").param("yearTo", "2025"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
@@ -100,10 +105,12 @@ class EventControllerTest {
         assertEquals(2, captor.getValue().getPage());
         assertEquals(5, captor.getValue().getPageSize());
         assertEquals(2026, captor.getValue().getYear());
+        assertEquals(2024, captor.getValue().getYearFrom());
+        assertEquals(2025, captor.getValue().getYearTo());
     }
 
     @Test
-    @DisplayName("GET /events - 不带 year 时应为 null（服务端过滤是可选维度，缺省不过滤）")
+    @DisplayName("GET /events - 不带 year/yearFrom/yearTo 时应为 null（服务端过滤是可选维度，缺省不过滤）")
     void pageShouldPassNullYearWhenAbsent() throws Exception {
         Mockito.when(eventService.pageQuery(ArgumentMatchers.any()))
                 .thenReturn(new PageVO<>(List.<EventListVO>of(), 0L, 1L, 10L));
@@ -114,10 +121,12 @@ class EventControllerTest {
 
         ArgumentCaptor<EventQuery> captor = ArgumentCaptor.forClass(EventQuery.class);
         Mockito.verify(eventService).pageQuery(captor.capture());
-        // 无参请求走 DTO 的字段默认值（page=1/pageSize=10），year 缺省 null
+        // 无参请求走 DTO 的字段默认值（page=1/pageSize=10），year 与区间缺省 null
         assertEquals(1, captor.getValue().getPage());
         assertEquals(10, captor.getValue().getPageSize());
         org.junit.jupiter.api.Assertions.assertNull(captor.getValue().getYear());
+        org.junit.jupiter.api.Assertions.assertNull(captor.getValue().getYearFrom());
+        org.junit.jupiter.api.Assertions.assertNull(captor.getValue().getYearTo());
     }
 
     @Test

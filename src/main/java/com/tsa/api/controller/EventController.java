@@ -32,7 +32,9 @@ public class EventController {
     private final EventService eventService;
 
     @Operation(summary = "活动分页列表", description = "按开始时间降序；query：page(默认1)/pageSize(默认10,钳1..50)/"
-            + "year(可选,按 start_time 年份)；status 为派生的 upcoming/past；不含正文")
+            + "year(可选,按 start_time 年份)/yearFrom+yearTo(可选,年份区间含端点,任一侧可缺省,"
+            + "与 year 同时给出取交集,yearFrom>yearTo 判 400)；status 为派生的 upcoming/past；"
+            + "含 articleUrl(可为 null,web 列表直跳公众号)；不含正文")
     @GetMapping
     public Result<PageVO<EventListVO>> page(EventQuery query) {
         return Result.ok(eventService.pageQuery(query));

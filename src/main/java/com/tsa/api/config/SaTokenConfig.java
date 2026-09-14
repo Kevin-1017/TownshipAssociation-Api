@@ -55,9 +55,12 @@ public class SaTokenConfig implements WebMvcConfigurer {
                 }))
                 .addPathPatterns("/tsa/**");
 
-        // 认证端点防刷（wechat-login 10/分、verify-phone 5/分、admin-login 5/分，超限 1306）：
-        // 排在鉴权拦截器之后 —— /tsa/auth/** 本就全部免登录，两者互不干扰
+        // 防刷闸门（认证组 5~10/分；社区写组——发布/点赞/评论/上传——5 次/时/IP，超限 1306）：
+        // 排在鉴权拦截器之后 —— 这些端点本就全部免登录，两者互不干扰。
+        // 社区整前缀挂上即可：拦截器只对 POST + 命中桶名的路径计数，GET 读端点一律放行；
+        // 点赞/评论带帖子 id 的写口靠归一桶收口（口径见 AuthRateLimitInterceptor 类注释）
         registry.addInterceptor(authRateLimitInterceptor)
-                .addPathPatterns(ApiConstants.BASE_PATH + "/auth/**");
+                .addPathPatterns(ApiConstants.BASE_PATH + "/auth/**",
+                        ApiConstants.BASE_PATH + "/community/**");
     }
 }

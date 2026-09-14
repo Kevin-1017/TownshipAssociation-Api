@@ -84,6 +84,12 @@ tsa:
     login-per-minute: ${RATE_LIMIT_LOGIN_PER_MIN:10}
     verify-phone-per-minute: ${RATE_LIMIT_VERIFY_PER_MIN:5}
     admin-login-per-minute: ${RATE_LIMIT_ADMIN_LOGIN_PER_MIN:5}
+    # 社区写端点（发布/点赞/评论/上传）按 IP 固定 1 小时窗口限频（2026-09-14 用户定稿 5 次/时，
+    # 全免登录写口一律收口；点赞/评论跨帖子 id 共享同桶，归一化口径见拦截器类注释）
+    community-post-per-hour: ${RATE_LIMIT_COMMUNITY_POST_PER_HOUR:5}
+    community-comment-per-hour: ${RATE_LIMIT_COMMUNITY_COMMENT_PER_HOUR:5}
+    community-like-per-hour: ${RATE_LIMIT_COMMUNITY_LIKE_PER_HOUR:5}
+    community-upload-per-hour: ${RATE_LIMIT_COMMUNITY_UPLOAD_PER_HOUR:5}
   files:
     # 文件上传本地磁盘根目录（契约 C8，第 2 棒 FileStorageService 消费本键）：
     # 部署时经环境变量换到持久卷；prod 终态切 OSS 后此键废弃

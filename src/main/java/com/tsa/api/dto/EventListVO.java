@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
  *   <li>{@code status} 是<b>派生展示态</b> upcoming/past（start_time 与当前时间比较，
  *       不落库），不是 activity.status 那套 0/1/2/3 库内流转状态</li>
  *   <li>没有 content 字段 —— 正文留在公众号文章里（v1.2 D2 形态），接口永不外给</li>
+ *   <li>{@code articleUrl} 2026-09-14 起随列表下发：web 端删除了事件详情页，
+ *       列表卡片直接跳公众号；值可为 null（秘书处未补链接的过渡态），键必须在场</li>
  * </ul>
  */
 @Data
@@ -34,6 +36,9 @@ public class EventListVO {
 
     @Schema(description = "一句话简介，可为 null")
     private String summary;
+
+    @Schema(description = "公众号文章永久链接，可为 null（未补链接的过渡态）")
+    private String articleUrl;
 
     @Schema(description = "开始时间（ISO 8601 带时区，JacksonConfig 统一格式化）",
             example = "2026-10-01T14:00:00+08:00")

@@ -51,6 +51,9 @@ public class CommunityPost extends BaseEntity {
     @Schema(description = "点赞数")
     private Integer likes;
 
+    @Schema(description = "审核状态：0 待审核 / 1 已通过 / 2 已驳回（审核制 2026-09-14）")
+    private Integer status;
+
     @Schema(description = "发布时间")
     private LocalDateTime publishTime;
 }

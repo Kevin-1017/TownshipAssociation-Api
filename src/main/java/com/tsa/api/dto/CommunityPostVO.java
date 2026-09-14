@@ -52,6 +52,10 @@ public class CommunityPostVO {
     @Schema(description = "评论条数")
     private Integer comments;
 
+    @Schema(description = "审核状态：0 待审核 / 1 已通过 / 2 已驳回（管理端列表消费；"
+            + "公开列表/详情只会下发 1，前端可无视）", example = "1", allowableValues = {"0", "1", "2"})
+    private Integer status;
+
     @Schema(description = "评论列表（仅详情返回）")
     private List<CommentVO> commentsList;
 

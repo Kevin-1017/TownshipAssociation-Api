@@ -3,6 +3,7 @@ package com.tsa.api.controller;
 import com.tsa.api.common.BusinessException;
 import com.tsa.api.common.Result;
 import com.tsa.api.common.ResultCode;
+import com.tsa.api.common.UploadRules;
 import com.tsa.api.config.ApiConstants;
 import com.tsa.api.dto.FileUploadVO;
 import com.tsa.api.service.AuthService;
@@ -45,24 +46,6 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class FileController {
 
-    /**
-     * 业务大小上限（契约 C8）：2MB。
-     * 与 spring.servlet.multipart 的容器闸（3MB）刻意分层：容器先拦超大 body 的 DoS，
-     * 业务闸负责把「超限」翻译回契约钉死的 400 提示。
-     */
-    private static final long MAX_SIZE_BYTES = 2L * 1024 * 1024;
-
-    /**
-     * 类型白名单按 <b>content-type</b> 判定（契约 C8），扩展名由服务端生成 ——
-     * 客户端自报的文件名/后缀一律不可信（改名 .html 就绕过黑名单是老式事故）。
-     * content-type 同样可伪造，本期接受：有 Bearer 门 + uuid 落盘名 + GET 只按白名单
-     * 回 image/* 类型三层兜着，伪装的字节流最多是张坏图，成不了脚本。
-     */
-    private static final Map<String, String> EXT_BY_CONTENT_TYPE = Map.of(
-            "image/jpeg", "jpg",
-            "image/png", "png",
-            "image/webp", "webp");
-
     /** 回读 Content-Type 按扩展名给（存储层没存 MIME，本期不为此加 sidecar 元数据） */
     private static final Map<String, MediaType> MEDIA_BY_EXT = Map.of(
             "jpg", MediaType.IMAGE_JPEG,
@@ -88,10 +71,10 @@ public class FileController {
         // 身份裁决只验返回值丢弃：本期不做「文件归属表」(D3 定案不落库),但 assoc- 前缀必须拒
         // ——否则乡会令牌可无限写盘(路由层的 checkLogin 对它是放行的,见类注释 A9)
         authService.currentOpenid();
-        // 缺字段/空文件/超限/类型不符一律同一句 400 提示（契约 C8 钉死 message），
-        // 不区分原因既省对客户端的信息泄露面，也省得前端为四种失败摆四张 toast
-        String ext = file == null ? null : EXT_BY_CONTENT_TYPE.get(file.getContentType());
-        if (ext == null || file.isEmpty() || file.getSize() > MAX_SIZE_BYTES) {
+        // 缺字段/空文件/超限/类型不符一律同一句 400 提示（契约 C8 钉死 message，规则收在 UploadRules，
+        // 与社区公开上传端点共用），不区分原因既省对客户端的信息泄露面，也省得前端为四种失败摆四张 toast
+        String ext = UploadRules.extOfAllowedType(file);
+        if (!UploadRules.accepted(file)) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "文件超限或类型不支持");
         }
         String name = UUID.randomUUID() + "." + ext;

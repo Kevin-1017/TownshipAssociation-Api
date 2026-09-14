@@ -5,14 +5,17 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tsa.api.common.BusinessException;
 import com.tsa.api.common.ResultCode;
+import com.tsa.api.dto.EventAdminQuery;
 import com.tsa.api.dto.EventDetailVO;
 import com.tsa.api.dto.EventListVO;
 import com.tsa.api.dto.EventQuery;
+import com.tsa.api.dto.EventSaveRequest;
 import com.tsa.api.dto.PageVO;
 import com.tsa.api.entity.Activity;
 import com.tsa.api.mapper.ActivityMapper;
 import com.tsa.api.service.EventService;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,9 +28,9 @@ import java.time.ZoneId;
  * （coverUrl→cover），copyProperties 会静默漏掉异名字段——正是这种
  * 「拷了个 null 出去」最难查，索性逐字段写明白，白名单一目了然。
  *
- * <p>为什么不过滤库内 status 列（0未开始/1报名中…）：本期没有发布/下架工作流，
- * 秘书处 SQL 直插的行即视为已发布；将来若做下架，收口加的就是这里一处过滤，
- * 不外溢到契约与前端。
+ * <p>为什么不过滤库内 status 列（0未开始/1报名中…）：本期不做发布/下架开关（用户定稿
+ * 「删除即下架」），发布靠逻辑删除位 deleted（@TableLogic 自动排除）、不碰 status 列；
+ * 将来若真做下架工作流，收口加的就是这里一处过滤，不外溢到契约与前端。
  */
 @Service
 public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> implements EventService {
@@ -49,16 +52,37 @@ public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> impl
         LambdaQueryWrapper<Activity> wrapper = new LambdaQueryWrapper<Activity>()
                 .orderByDesc(Activity::getStartTime);
 
+        // 契约 C5：year（单年=区间退化）与 yearFrom..yearTo（含端点、两侧可缺省=开区间）
+        // 同时给出时取交集：下界取最大、上界取最小。越界值直接判非法，而不是让 LocalDate.of
+        // 内部抛 DateTimeException 被兜底伪装成 500（B5 拆穿同一陷阱的口径）。
+        requireFourDigitYear(query.getYear(), "年份参数不合法");
+        requireFourDigitYear(query.getYearFrom(), "yearFrom须为4位数字年份");
+        requireFourDigitYear(query.getYearTo(), "yearTo须为4位数字年份");
+        if (query.getYearFrom() != null && query.getYearTo() != null
+                && query.getYearFrom() > query.getYearTo()) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "yearFrom不能大于yearTo");
+        }
+
+        Integer lowerYear = null;
+        Integer upperYear = null;
         if (query.getYear() != null) {
-            // 契约 C5：year 为可选 4 位数字；越界值直接判非法，而不是让 LocalDate.of
-            // 内部抛 DateTimeException 被兜底伪装成 500（B5 拆穿同一陷阱的口径）
-            if (query.getYear() < 1000 || query.getYear() > 9999) {
-                throw new BusinessException(ResultCode.BAD_REQUEST, "年份参数不合法");
-            }
-            // 年份边界过滤用 [当年1月1日, 次年1月1日) 半开区间而不是 YEAR(start_time)=? 函数：
-            // 函数包住列会让 idx_start_time 失效走全表扫（本期表小无感，钉死的是写法的下界）
-            LocalDateTime from = LocalDate.of(query.getYear(), 1, 1).atStartOfDay();
-            wrapper.ge(Activity::getStartTime, from).lt(Activity::getStartTime, from.plusYears(1));
+            lowerYear = query.getYear();
+            upperYear = query.getYear();
+        }
+        if (query.getYearFrom() != null) {
+            lowerYear = lowerYear == null ? query.getYearFrom() : Math.max(lowerYear, query.getYearFrom());
+        }
+        if (query.getYearTo() != null) {
+            upperYear = upperYear == null ? query.getYearTo() : Math.min(upperYear, query.getYearTo());
+        }
+        // 年份边界过滤用 [当年1月1日, 次年1月1日) 半开区间而不是 YEAR(start_time)=? 函数：
+        // 函数包住列会让 idx_start_time 失效走全表扫（本期表小无感，钉死的是写法的下界）。
+        // year 与区间交出的空集（如 year=2024 + yearFrom=2025）不报错，ge/lt 自然夹出空页。
+        if (lowerYear != null) {
+            wrapper.ge(Activity::getStartTime, LocalDate.of(lowerYear, 1, 1).atStartOfDay());
+        }
+        if (upperYear != null) {
+            wrapper.lt(Activity::getStartTime, LocalDate.of(upperYear + 1, 1, 1).atStartOfDay());
         }
 
         return PageVO.of(this.page(new Page<>(page, size), wrapper).convert(this::toListVO));
@@ -74,13 +98,61 @@ public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> impl
         return toDetailVO(activity);
     }
 
-    /** 实体 → 列表项（契约 C5）：无 content；status 由 start_time 派生，不落库 */
+    @Override
+    public PageVO<EventListVO> adminPageQuery(EventAdminQuery query) {
+        long size = Math.min(Math.max(query.getPageSize() == null ? 10 : query.getPageSize(), 1), 50);
+        long page = Math.max(query.getPage() == null ? 1 : query.getPage(), 1);
+        LambdaQueryWrapper<Activity> wrapper = new LambdaQueryWrapper<Activity>()
+                .like(StringUtils.hasText(query.getKeyword()), Activity::getTitle, query.getKeyword())
+                .orderByDesc(Activity::getStartTime);
+        return PageVO.of(this.page(new Page<>(page, size), wrapper).convert(this::toListVO));
+    }
+
+    @Override
+    public Long create(EventSaveRequest request) {
+        Activity activity = new Activity();
+        applyEditableFields(activity, request);
+        // 报名/经纬度/人数/content 等列不进管理端契约，保持库默认；status 列本期不参与对外过滤
+        this.save(activity);
+        return activity.getId();
+    }
+
+    @Override
+    public void update(Long id, EventSaveRequest request) {
+        Activity activity = this.getById(id);
+        if (activity == null) {
+            throw new BusinessException(ResultCode.DATA_NOT_FOUND, "活动不存在：id=" + id);
+        }
+        applyEditableFields(activity, request);
+        this.updateById(activity);
+    }
+
+    @Override
+    public void delete(Long id) {
+        if (this.getById(id) == null) {
+            throw new BusinessException(ResultCode.DATA_NOT_FOUND, "活动不存在：id=" + id);
+        }
+        // 逻辑删除（@TableLogic）：删除即下架，公开列表/详情/首页速览随即查不到这行
+        this.removeById(id);
+    }
+
+    /** 可编辑字段的单一写入点（create/update 共用）：VO 的 cover ↔ 实体的 coverUrl 异名，逐字段显式赋值 */
+    private void applyEditableFields(Activity activity, EventSaveRequest request) {
+        activity.setTitle(request.getTitle());
+        activity.setCoverUrl(request.getCover());
+        activity.setSummary(request.getSummary());
+        activity.setArticleUrl(request.getArticleUrl());
+        activity.setStartTime(request.getStartTime());
+    }
+
+    /** 实体 → 列表项（契约 C5）：无 content；status 由 start_time 派生，不落库；articleUrl 供 web 列表直跳公众号 */
     private EventListVO toListVO(Activity activity) {
         EventListVO vo = new EventListVO();
         vo.setId(activity.getId());
         vo.setTitle(activity.getTitle());
         vo.setCover(activity.getCoverUrl());
         vo.setSummary(activity.getSummary());
+        vo.setArticleUrl(activity.getArticleUrl());
         vo.setStartTime(activity.getStartTime());
         vo.setStatus(isUpcoming(activity) ? STATUS_UPCOMING : STATUS_PAST);
         return vo;
@@ -96,6 +168,13 @@ public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> impl
         vo.setStartTime(activity.getStartTime());
         vo.setArticleUrl(activity.getArticleUrl());
         return vo;
+    }
+
+    /** 4 位年份校验：null（未给）放行，越界判 400——错误信息按参数名各自给 */
+    private void requireFourDigitYear(Integer year, String message) {
+        if (year != null && (year < 1000 || year > 9999)) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, message);
+        }
     }
 
     /**

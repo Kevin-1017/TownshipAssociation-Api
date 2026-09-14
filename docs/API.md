@@ -105,15 +105,16 @@
 | POST | `/tsa/auth/verify-phone` | 乡会身份核验（getPhoneNumber 动态 code 换手机号 → 比对内部名册 association_member；命中返 verified=true+token，未命中返 verified=false 仍是 HTTP 200） |
 | POST | `/tsa/files` | 上传图片（契约 C8，**需 Bearer**；multipart 字段名 `file`，≤2MB、类型限 jpg/png/webp 按 content-type 判定；data=`{path:"/tsa/files/<uuid>.<ext>"}` 相对路径、不落库；缺字段/空/超限/类型不符一律 400「文件超限或类型不支持」） |
 | GET | `/tsa/files/{name}` | 读取图片（契约 C8，公开——`<image>` 组件发不了带令牌请求；name 须为上传返回的 uuid 文件名，非法名/文件不存在一律 code=404 壳；按扩展名给 Content-Type） |
-| GET | `/tsa/events` | 活动分页列表（契约 C5，公开；query：page 默认 1、pageSize 默认 10 钳 1..50、year 可选 4 位数字按 start_time 年份；start_time 倒序；status 为派生 upcoming/past 不落库；**无正文**） |
+| GET | `/tsa/events` | 活动分页列表（契约 C5，公开；query：page 默认 1、pageSize 默认 10 钳 1..50、year 可选 4 位数字按 start_time 年份、yearFrom/yearTo 可选年份区间含端点（任一侧可缺省=开区间，与 year 同时给出取交集，yearFrom>yearTo 或越界 400）；start_time 倒序；status 为派生 upcoming/past 不落库；列表项自 2026-09-14 起含 **articleUrl**（可为 null，web 端已删详情页、列表卡片直跳公众号）；**无正文**） |
 | GET | `/tsa/events/{id}` | 活动详情（契约 C6，公开；含 articleUrl=公众号永久链接可为 null，前端「阅读公众号全文」按钮用它调 wx.openOfficialAccountArticle；查无 1002；**无 content 字段**——正文留在公众号，v1.2 D2） |
 | GET | `/tsa/notices` | 公告列表（置顶优先；字段含 summary 摘要与 pinned 布尔） |
 | GET | `/tsa/notices/{id}` | 公告详情（不存在返回 1002） |
-| GET | `/tsa/community/posts` | ⚠️已下线 社区动态分页列表（参数：page,pageSize,type,cuisine,region,keyword；按发布时间倒序；不下发评论树） |
-| GET | `/tsa/community/posts/{id}` | ⚠️已下线 动态详情（含 commentsList；不存在返回 1002） |
-| POST | `/tsa/community/posts` | ⚠️已下线 发布动态（一期无登录，author 为自由填写昵称；返回新动态 id 字符串） |
-| POST | `/tsa/community/posts/{id}/like` | ⚠️已下线 点赞 +1（返回点赞后总数；动态不存在 1002） |
-| POST | `/tsa/community/posts/{id}/comments` | ⚠️已下线 发表评论（返回新建评论对象；动态不存在 1002） |
+| GET | `/tsa/community/posts` | ⚠️已下线 社区动态分页列表（参数：page,pageSize,type,cuisine,region,keyword；按发布时间倒序；不下发评论树；**2026-09-14 审核制：只下发已过审 status=1**） |
+| GET | `/tsa/community/posts/{id}` | ⚠️已下线 动态详情（含 commentsList；不存在**或未过审**返回 1002） |
+| POST | `/tsa/community/posts` | ⚠️已下线 发布动态（author 为自由填写昵称；**落库一律待审 status=0，管理端审核通过才进列表**；返回新动态 id 字符串；images 最多 1 张；**IP 限频 5 次/时**，超限 1306） |
+| POST | `/tsa/community/uploads` | 发布配图上传（**公开端点**（web 无登录态），multipart 字段名 `file`；≤2MB、类型限 jpg/png/webp，校验与 C8 同源 UploadRules；**IP 限频 5 次/时**，超限 1306；data=`{path}` 同 C8 形状，随发布请求放进 images） |
+| POST | `/tsa/community/posts/{id}/like` | ⚠️已下线 点赞 +1（返回点赞后总数；动态不存在**或未过审** 1002；**IP 限频 5 次/时·跨帖子共享同桶**） |
+| POST | `/tsa/community/posts/{id}/comments` | ⚠️已下线 发表评论（**2026-09-15 落库一律待审 status=0，审核通过后才随详情 commentsList 下发、才计入 comments 条数**；返回新评论；动态不存在**或未过审** 1002；**IP 限频 5 次/时·跨帖子共享同桶**） |
 | GET | `/tsa/foundation` | 基金会首页聚合（rewards 奖励类别 + donations 捐赠；amount 单位元） |
 | GET | `/tsa/foundation/rewards` | 奖励明细（categories 类别名 + records 获奖记录，含 categoryName） |
 | GET | `/tsa/foundation/donations` | 捐赠明细（按日期倒序） |
@@ -127,6 +128,15 @@
 | POST/PUT/DELETE | `/tsa/admin/foundation/categories[/{id}]` | 奖项类别增删改（**v1.3 从 `/tsa/foundation/**` 迁入并收口到 admin 墙，需 admin 角色**；返回形状不变：POST 回字符串 id、PUT/DELETE 回 Void；Service 抛不存在回 1002） |
 | POST/PUT/DELETE | `/tsa/admin/foundation/records[/{id}]` | 获奖记录增删改（同上迁移说明） |
 | POST/PUT/DELETE | `/tsa/admin/foundation/donations[/{id}]` | 捐赠鸣谢增删改（同上迁移说明） |
+| GET | `/tsa/admin/community/posts` | 动态分页列表·管理端（**需 admin 角色**；2026-09-14 审核制；query：page/pageSize 钳 1..100、status 可选 0 待审/1 已过/2 已驳（缺省全部）、type 可选 food/campus；发布时间倒序；VO 含 status 与评论数） |
+| PUT | `/tsa/admin/community/posts/{id}/audit` | 审核动态（**需 admin 角色**；body `{status: 1通过|2驳回}`（越界 400）；驳回可恢复：status=2 的记录可再审回 1；id 不存在 1002；成功回 Void） |
+| GET | `/tsa/admin/community/comments` | 评论分页列表·管理端（**需 admin 角色**；2026-09-15 评论审核制；query：page/pageSize 钳 1..100、status 可选 0/1/2（缺省全部）、postId 可选只看某动态下；评论时间倒序；CommentVO 含 postId/status） |
+| PUT | `/tsa/admin/community/comments/{id}/audit` | 审核评论（**需 admin 角色**；body `{status: 1通过|2驳回}` 同动态审核口径；通过后随详情下发并计入条数；id 不存在 1002） |
+| GET | `/tsa/admin/events` | 事件分页列表·管理端（**需 admin 角色**；2026-09-14 配置入口；query：page/pageSize 钳 1..50、keyword 标题模糊；start_time 倒序；出参复用契约 C5 列表 VO） |
+| POST | `/tsa/admin/events` | 新建事件（**需 admin 角色**；EventSaveRequest{title≤64 必填, cover?, summary?, articleUrl?, startTime 必填带时区 ISO}；创建即公开；返回字符串 id） |
+| PUT | `/tsa/admin/events/{id}` | 修改事件（**需 admin 角色**；null=不改、cover/summary/articleUrl 传空串=清除；id 不存在 1002） |
+| DELETE | `/tsa/admin/events/{id}` | 删除事件=下架（**需 admin 角色**；逻辑删除，公开列表/详情立即查无；id 不存在 1002） |
+| POST | `/tsa/admin/events/cover` | 事件封面上传（**需 admin 角色**；multipart 字段名 file，校验与 C8 同源 UploadRules ≤2MB/jpg·png·webp；不加 IP 限频（角色墙已收口）；回 `{path}` 随保存请求放进 cover） |
 
 ### 分页响应 `data` 结构（`dto/PageVO`，与前端契约一致）
 

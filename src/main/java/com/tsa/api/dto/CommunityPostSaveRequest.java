@@ -39,7 +39,8 @@ public class CommunityPostSaveRequest {
     @Size(min = 10, max = 1000, message = "内容至少 10 个字")
     private String content;
 
-    @Schema(description = "图片 URL 数组", example = "[]")
+    @Schema(description = "图片相对路径数组（最多 1 张，先传 POST /tsa/community/uploads 拿路径）", example = "[]")
+    @Size(max = 1, message = "最多上传 1 张图片")
     private List<String> images;
 
     @Schema(description = "菜系（仅美食动态）", example = "潮汕菜")

@@ -230,12 +230,14 @@ CREATE TABLE IF NOT EXISTS community_post (
     cuisine      VARCHAR(32)     NULL COMMENT '菜系（仅美食动态）',
     region       VARCHAR(32)     NULL COMMENT '所在地区（仅美食动态）：longdong/daxuecheng 或自定义',
     likes        INT             NOT NULL DEFAULT 0 COMMENT '点赞数',
+    status       TINYINT         NOT NULL DEFAULT 1 COMMENT '审核状态：0待审核/1已通过/2已驳回（审核制 2026-09-14，存量默认 1 视为已过审）',
     publish_time DATETIME        NOT NULL COMMENT '发布时间',
     created_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted      TINYINT         NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
     KEY idx_type_publish (type, publish_time),
+    KEY idx_status_publish (status, publish_time),
     KEY idx_cuisine (cuisine),
     KEY idx_region (region)
 ) ENGINE = InnoDB COMMENT '社区动态（美食基地/校园广场）';
@@ -250,6 +252,7 @@ CREATE TABLE IF NOT EXISTS community_comment (
     avatar      VARCHAR(255)    NULL COMMENT '头像 URL',
     content     VARCHAR(500)    NOT NULL COMMENT '评论内容',
     likes       INT             NOT NULL DEFAULT 0 COMMENT '评论点赞数',
+    status      TINYINT         NOT NULL DEFAULT 1 COMMENT '审核状态：0待审核/1已通过/2已驳回（评论审核制 2026-09-15，存量默认 1 视为已过审）',
     create_time DATETIME        NOT NULL COMMENT '评论时间',
     created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

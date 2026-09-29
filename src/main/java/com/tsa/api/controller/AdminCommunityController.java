@@ -35,7 +35,8 @@ public class AdminCommunityController {
     private final CommunityService communityService;
 
     @Operation(summary = "动态分页列表（管理端）", description = "含待审/驳倒在内容；query：page/pageSize(钳1..100)/"
-            + "status(0待审/1已过/2已驳回，缺省全部)/type(food/campus，缺省全部)，按发布时间倒序")
+            + "status(0待审/1已过/2已驳回，缺省全部；0/2 为统一审核态——动态本身或其下评论处于该状态即命中)/"
+            + "type(food/campus，缺省全部)，按发布时间倒序")
     @GetMapping("/posts")
     public Result<PageVO<CommunityPostVO>> page(CommunityPostAdminQuery query) {
         return Result.ok(communityService.adminPageQuery(query));
@@ -50,7 +51,8 @@ public class AdminCommunityController {
     }
 
     @Operation(summary = "评论分页列表（管理端）", description = "含待审/驳回；query：page/pageSize(钳1..100)/"
-            + "status(0待审/1已过/2已驳，缺省全部)/postId(可选，只看某动态下评论)，按评论时间倒序")
+            + "status(0待审/1已过/2已驳，缺省全部)/postId(可选，只看某动态下评论)/"
+            + "type(food/campus，缺省全部，经所属动态关联栏目)，按评论时间倒序")
     @GetMapping("/comments")
     public Result<PageVO<CommentVO>> comments(CommunityCommentAdminQuery query) {
         return Result.ok(communityService.adminCommentPage(query));

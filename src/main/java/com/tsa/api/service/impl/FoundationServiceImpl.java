@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.tsa.api.common.BusinessException;
 import com.tsa.api.common.ResultCode;
+import com.tsa.api.dto.DonationAdminVO;
 import com.tsa.api.dto.DonationItemVO;
 import com.tsa.api.dto.DonationRecordVO;
 import com.tsa.api.dto.DonationSaveRequest;
@@ -83,6 +84,22 @@ public class FoundationServiceImpl implements FoundationService {
                     vo.setId(d.getId());
                     vo.setDonorName(d.getDonorName());
                     vo.setAmount(visibleAmount(d));
+                    vo.setDate(d.getDonationDate());
+                    return vo;
+                })
+                .toList();
+    }
+
+    @Override
+    public List<DonationAdminVO> adminDonations() {
+        // 管理端视图：保密只是官网展示口径，这里 amount 原值不抹码、并透出 amountVisible 开关
+        return listDonationsDesc().stream()
+                .map(d -> {
+                    DonationAdminVO vo = new DonationAdminVO();
+                    vo.setId(d.getId());
+                    vo.setDonorName(d.getDonorName());
+                    vo.setAmount(d.getAmount());
+                    vo.setAmountVisible(d.getAmountVisible());
                     vo.setDate(d.getDonationDate());
                     return vo;
                 })

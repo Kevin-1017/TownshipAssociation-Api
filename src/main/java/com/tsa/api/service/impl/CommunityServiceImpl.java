@@ -110,9 +110,29 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityPostMapper, Commu
         long size = Math.min(Math.max(query.getPageSize() == null ? DEFAULT_PAGE_SIZE : query.getPageSize(), 1), MAX_PAGE_SIZE);
         long page = Math.max(query.getPage() == null ? 1 : query.getPage(), 1);
 
-        LambdaQueryWrapper<CommunityPost> wrapper = new LambdaQueryWrapper<CommunityPost>()
-                .eq(query.getStatus() != null, CommunityPost::getStatus, query.getStatus())
-                .eq(StringUtils.hasText(query.getType()), CommunityPost::getType, query.getType())
+        LambdaQueryWrapper<CommunityPost> wrapper = new LambdaQueryWrapper<>();
+        Integer status = query.getStatus();
+        if (status != null) {
+            if (status == STATUS_PENDING || status == STATUS_REJECTED) {
+                // 统一审核态（2026-09-29 树形审核台）：待审/已驳队列要同时命中「动态本身处于该状态」
+                // 与「其下存在同状态评论」——评论只会挂在已过审动态下，仅按动态 status 筛会漏掉评论队列。
+                // group by post_id 去重取候选动态。
+                List<Long> commentPostIds = commentMapper.selectList(new LambdaQueryWrapper<CommunityComment>()
+                                .select(CommunityComment::getPostId)
+                                .eq(CommunityComment::getStatus, status)
+                                .groupBy(CommunityComment::getPostId))
+                        .stream().map(CommunityComment::getPostId).toList();
+                wrapper.and(w -> {
+                    w.eq(CommunityPost::getStatus, status);
+                    if (!commentPostIds.isEmpty()) {
+                        w.or().in(CommunityPost::getId, commentPostIds);
+                    }
+                });
+            } else {
+                wrapper.eq(CommunityPost::getStatus, status);
+            }
+        }
+        wrapper.eq(StringUtils.hasText(query.getType()), CommunityPost::getType, query.getType())
                 .orderByDesc(CommunityPost::getPublishTime);
 
         IPage<CommunityPost> ipage = this.page(new Page<>(page, size), wrapper);
@@ -169,6 +189,17 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityPostMapper, Commu
                 .eq(query.getStatus() != null, CommunityComment::getStatus, query.getStatus())
                 .eq(query.getPostId() != null, CommunityComment::getPostId, query.getPostId())
                 .orderByDesc(CommunityComment::getCreateTime);
+        // 栏目过滤（food/campus）：评论自身无 type，经所属动态关联；栏目下无动态时直接回空页
+        if (StringUtils.hasText(query.getType())) {
+            List<Long> postIds = lambdaQuery()
+                    .select(CommunityPost::getId)
+                    .eq(CommunityPost::getType, query.getType())
+                    .list().stream().map(CommunityPost::getId).toList();
+            if (postIds.isEmpty()) {
+                return new PageVO<>(Collections.emptyList(), 0L, page, size);
+            }
+            wrapper.in(CommunityComment::getPostId, postIds);
+        }
         IPage<CommunityComment> ipage = commentMapper.selectPage(new Page<>(page, size), wrapper);
         List<CommentVO> vos = ipage.getRecords().stream().map(this::toCommentVO).toList();
         return new PageVO<>(vos, ipage.getTotal(), ipage.getCurrent(), ipage.getSize());

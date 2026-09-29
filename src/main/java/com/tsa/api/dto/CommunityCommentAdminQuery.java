@@ -24,4 +24,7 @@ public class CommunityCommentAdminQuery {
 
     @Schema(description = "只看某条动态下的评论（可选）", example = "1")
     private Long postId;
+
+    @Schema(description = "按栏目筛选（可选：food/campus；缺省全部。评论经所属动态关联栏目）", example = "food")
+    private String type;
 }

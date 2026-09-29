@@ -1,5 +1,6 @@
 package com.tsa.api.service;
 
+import com.tsa.api.dto.DonationAdminVO;
 import com.tsa.api.dto.DonationRecordVO;
 import com.tsa.api.dto.DonationSaveRequest;
 import com.tsa.api.dto.FoundationHomeVO;
@@ -26,6 +27,9 @@ public interface FoundationService {
 
     /** 捐赠明细：按日期倒序。 */
     List<DonationRecordVO> donations();
+
+    /** 捐赠明细（管理端）：amount 原值不抹码 + amountVisible 开关；保密仅是官网展示口径。 */
+    List<DonationAdminVO> adminDonations();
 
     // ---------- 写：奖项类别 ----------
 

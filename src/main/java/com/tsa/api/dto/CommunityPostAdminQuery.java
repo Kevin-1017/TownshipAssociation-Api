@@ -19,7 +19,9 @@ public class CommunityPostAdminQuery {
     @Schema(description = "每页条数，最大 100", example = "20", defaultValue = "20")
     private Integer pageSize = 20;
 
-    @Schema(description = "按审核状态筛选（可选：0 待审核/1 已通过/2 已驳回；缺省全部）", example = "0")
+    @Schema(description = "按审核状态筛选（可选：0 待审核/1 已通过/2 已驳回；缺省全部）。"
+            + "0/2 为统一审核态：动态本身处于该状态、或其下存在同状态评论即命中（评论只会挂在已过审动态下）；"
+            + "1 只命中已过审动态本身", example = "0")
     private Integer status;
 
     @Schema(description = "按栏目筛选（可选：food/campus；缺省全部）", example = "food")

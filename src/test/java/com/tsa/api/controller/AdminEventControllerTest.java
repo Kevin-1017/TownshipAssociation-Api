@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * AdminEventController standalone MockMvc 测试（不连数据库，Service/存储全打桩）。
  *
- * <p>钉的是 Web 层契约形状：query 绑定透传、@Valid 校验（标题必填、startTime 必填）、
+ * <p>钉的是 Web 层响应形状：query 绑定透传、@Valid 校验（标题必填、startTime 必填）、
  * 1002 业务码壳、封面上传三态（成功回路径 / 非法类型 400 / 超限 400）。
  * 「删除即下架」的落库语义在 EventServiceImpl，standalone 测不到，靠服务层单测兜（本期从简，与 notices 同口径）。
  */
@@ -48,7 +48,7 @@ class AdminEventControllerTest {
     /**
      * 合法事件请求体：startTime 用带时区 ISO 串（与 EventSaveRequest 的 @JsonFormat pattern 对齐）。
      * 不走 ObjectMapper 序列化——LocalDateTime 没有 offset 字段，Jackson 能按 XXX 解析、却不能按 XXX 输出，
-     * 手写串既贴真实前端契约又绕开这个不对称。
+     * 手写串既贴真实前端入参又绕开这个不对称。
      */
     private static final String SAVE_JSON = "{\"title\":\"乡会 2026 年度恳亲大会\","
             + "\"cover\":\"/tsa/files/0b1e5c2f-9a3d-4e7c-8f21-6d0a4b3c5e77.jpg\","

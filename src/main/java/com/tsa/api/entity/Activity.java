@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 活动表实体（v1.2 D2：只读接口 EventController 已上线，正文走公众号文章、报名仍不做）。
+ * 活动表实体（公开侧经 EventController 只读，正文走公众号文章、不提供报名）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

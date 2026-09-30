@@ -8,11 +8,11 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- * 本人资料更新请求（契约 C7，PUT /tsa/user/profile）。
+ * 本人资料更新请求（PUT /tsa/user/profile）。
  *
- * <p>与 {@link MemberSaveRequest}（后台注册建档）的区别是本请求<b>全部字段可选</b>：
+ * <p><b>全部字段可选</b>：
  * 已登录用户在资料页改哪项就传哪项，后端按白名单逐列 update，绝不整行覆盖。
- * openid 不在请求体里 —— 由 Bearer 登录态推导（防钓鱼建档，修订 A7/B16 同源逻辑）。
+ * openid 不在请求体里 —— 由 Bearer 登录态推导（防钓鱼建档）。
  * 字段长度上限与 member 表列宽一一对应，校验放这里而不是 Service 手写 if。
  */
 @Data

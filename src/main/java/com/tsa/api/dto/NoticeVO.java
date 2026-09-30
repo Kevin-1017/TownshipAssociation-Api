@@ -8,12 +8,12 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 公告出参视图对象 —— 按前端 NoticeItem 契约裁剪。
+ * 公告出参视图对象 —— 按前端 NoticeItem 类型裁剪。
  *
- * <p>教学要点：实体里的 {@code isTop} 是数据库的 0/1 整型，
- * 契约要求 {@code pinned} 布尔 —— 形状转换发生在 VO 这一层，
- * 不让实体直接对着前端输出（也顺手避开了 boolean isXxx 的序列化命名坑）。
- * 注意列表与详情都带 content：公告数量少、正文短，契约约定不分页一次给全。
+ * <p>形状转换发生在 VO 这一层：实体里 {@code isTop} 是数据库的 0/1 整型，
+ * 对外下发 {@code pinned} 布尔 —— 不让实体直接对着前端输出
+ * （也顺手避开了 boolean isXxx 的序列化命名坑）。
+ * 列表与详情都带 content：公告数量少、正文短，不分页一次给全。
  */
 @Data
 @Schema(description = "公告（列表与详情共用）")

@@ -9,9 +9,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 成员公开视图对象 —— 列表接口的出参契约。
+ * 成员公开视图对象 —— 列表接口出参。
  *
- * <p>教学要点：实体不外泄给不匹配的消费方。Member 里的 {@code openid} 是微信登录凭证、
+ * <p>实体不外泄给不匹配的消费方：Member 里的 {@code openid} 是微信登录凭证、
  * {@code status} 在公开查询里恒为 1 —— 都不是前端该看到的，在这里裁掉；
  * phone 则在实体上直接 @JsonIgnore。裁剪发生在 VO 层，数据库和实体保持原样。
  */

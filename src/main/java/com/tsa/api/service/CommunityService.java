@@ -11,7 +11,7 @@ import com.tsa.api.dto.CommunityPostVO;
 import com.tsa.api.dto.PageVO;
 import com.tsa.api.entity.CommunityPost;
 
-/** 社区动态业务接口（美食基地 / 校园广场）。2026-09-14 起发布走审核制：新帖待审，管理端审后公开。 */
+/** 社区动态业务接口（美食基地 / 校园广场）。发布走审核制：新帖待审，管理端审后公开。 */
 public interface CommunityService extends IService<CommunityPost> {
 
     /** 公开分页 + 条件查询，只下发已通过（status=1），按发布时间倒序。 */

@@ -73,7 +73,7 @@ class CommunityControllerTest {
     }
 
     @Test
-    @DisplayName("GET /community/posts - 分页响应应为契约形状且 id 序列化为字符串")
+    @DisplayName("GET /community/posts - 分页响应应为统一分页形状且 id 序列化为字符串")
     void pageShouldReturnContractShape() throws Exception {
         PageVO<CommunityPostVO> pageVO = new PageVO<>(List.of(sampleVO()), 1L, 1L, 20L);
         Mockito.when(communityService.pageQuery(ArgumentMatchers.any(CommunityPostQuery.class))).thenReturn(pageVO);

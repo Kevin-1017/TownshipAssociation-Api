@@ -101,7 +101,7 @@ public class AnnouncementServiceImpl extends ServiceImpl<AnnouncementMapper, Ann
         }
     }
 
-    /** 实体 → 契约 VO：isTop 整型转 pinned 布尔，id 由 VO 注解序列化为字符串 */
+    /** 实体 → VO：isTop 整型转 pinned 布尔，id 由 VO 注解序列化为字符串 */
     private NoticeVO toVO(Announcement announcement) {
         NoticeVO vo = new NoticeVO();
         vo.setId(announcement.getId());

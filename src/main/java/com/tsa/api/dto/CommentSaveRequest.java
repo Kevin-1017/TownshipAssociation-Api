@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-/** 发表评论请求。一期无登录，author 前端固定传「我」或昵称。 */
+/** 发表评论请求。本端点免登录，author 由前端固定传「我」或昵称。 */
 @Data
 @Schema(description = "发表评论请求")
 public class CommentSaveRequest {

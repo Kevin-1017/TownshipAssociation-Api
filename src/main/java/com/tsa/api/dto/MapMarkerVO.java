@@ -10,9 +10,9 @@ import java.math.BigDecimal;
 /**
  * 地图打点专用的轻量视图对象（VO）。
  *
- * <p>教学要点：地图接口可能被高频调用，只返回渲染所需的最小字段集，
- * 不要把整个实体序列化出去——这就是"接口按消费方裁剪响应"的思路。
- * 字段集与前端契约一致：id name avatarUrl lat lng province city industry。
+ * <p>地图接口可能被高频调用，只返回渲染所需的最小字段集，
+ * 不要把整个实体序列化出去——接口按消费方裁剪响应。
+ * 字段集与前端一致：id name avatarUrl lat lng province city industry。
  */
 @Data
 @Schema(description = "地图标记点（轻量）")

@@ -7,11 +7,10 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * 统一分页响应结构 —— 与前端契约对齐的形状。
+ * 统一分页响应结构 —— 与前端对齐的形状。
  *
- * <p>教学要点：MyBatis-Plus 的 {@link IPage} 序列化出来是
- * records/total/current/size/pages，那是"数据库分页对象"的形状，不是接口契约。
- * 框架内部对象不直接当契约输出——在 dto 层定义自己的分页结构，
+ * <p>MyBatis-Plus 的 {@link IPage} 序列化出来是 records/total/current/size/pages，
+ * 那是数据库分页对象的形状，不能直接当接口出参——dto 层定义自己的分页结构，
  * 用 {@link #of(IPage)} 做一次转换，将来换分页实现也不影响前端。
  *
  * @param <T> 列表元素类型
@@ -39,7 +38,7 @@ public class PageVO<T> {
         this.pageSize = pageSize;
     }
 
-    /** 把 MyBatis-Plus 的 IPage 转成契约形状 */
+    /** 把 MyBatis-Plus 的 IPage 转成本结构 */
     public static <T> PageVO<T> of(IPage<T> page) {
         return new PageVO<>(page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize());
     }

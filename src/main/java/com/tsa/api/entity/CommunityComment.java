@@ -29,7 +29,7 @@ public class CommunityComment extends BaseEntity {
     @Schema(description = "评论点赞数")
     private Integer likes;
 
-    @Schema(description = "审核状态：0 待审核 / 1 已通过 / 2 已驳回（评论审核制 2026-09-15）")
+    @Schema(description = "审核状态：0 待审核 / 1 已通过 / 2 已驳回")
     private Integer status;
 
     @Schema(description = "评论时间")

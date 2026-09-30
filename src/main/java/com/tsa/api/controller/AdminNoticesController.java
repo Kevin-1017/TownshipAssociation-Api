@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 公告管理端接口（v1.3 新能力，需 admin 角色，挂在 /tsa/admin/notices）。
+ * 公告管理端接口（需 admin 角色，挂在 /tsa/admin/notices）。
  *
  * <p>公开的只读公告仍走 {@code AnnouncementController}（/tsa/notices/**），本类只做增删改与全量列表。
  * 整个 /tsa/admin/** 前缀由 SaTokenConfig 的 {@code checkRole("admin")} 把门。

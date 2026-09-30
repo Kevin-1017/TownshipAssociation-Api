@@ -33,13 +33,13 @@ import java.util.UUID;
 /**
  * 社区动态接口（美食基地 / 校园广场）。
  *
- * <p>一期无登录：发布与评论的作者为表单自由填写的昵称；点赞只做计数自增。
+ * <p>无登录态：发布与评论的作者为表单自由填写的昵称；点赞只做计数自增。
  *
- * <p><b>2026-09-14 审核制</b>：发布一律落待审（管理端 /tsa/admin/community/** 审后才公开），
+ * <p><b>审核制</b>：发布一律落待审（管理端 /tsa/admin/community/** 审后才公开），
  * 读路径只放行已过审内容；配图走公开上传端点 /uploads（web 无登录态，Bearer 版 /tsa/files 不适用），
- * 参数级校验与 C8 同源（UploadRules），IP 限频在 AuthRateLimitInterceptor 圈定。
+ * 参数级校验与 /tsa/files 同源（UploadRules），IP 限频在 AuthRateLimitInterceptor 圈定。
  *
- * <p><b>2026-09-12 状态</b>：小程序端已将本组功能下线（个人主体不可提供 UGC 发布/浏览，
+ * <p><b>当前状态</b>：小程序端已将本组功能下线（个人主体不可提供 UGC 发布/浏览，
  * 见运营规范 5.7.1），服务端<b>刻意保留</b>接口与数据：主体变更（个人→非个人）并报备
  * 【社交-社区/论坛】类目后，社区功能按原契约回归，届时恢复调用即可。
  */
@@ -77,7 +77,7 @@ public class CommunityController {
     @PostMapping("/uploads")
     public Result<FileUploadVO> upload(@RequestPart(value = "file", required = false) MultipartFile file)
             throws IOException {
-        // 与 FileController.upload 同一句 400 文案：原因不细分的收口口径也一并沿用（契约 C8）
+        // 与 FileController.upload 同一句 400 文案：原因不细分的收口口径也一并沿用
         String ext = UploadRules.extOfAllowedType(file);
         if (!UploadRules.accepted(file)) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "文件超限或类型不支持");

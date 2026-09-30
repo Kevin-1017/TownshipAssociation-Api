@@ -19,10 +19,10 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * 文件存储·本地磁盘实现（契约 C8）。
+ * 文件存储·本地磁盘实现。
  *
  * <p>二期换 OSS 的机制是新增实现类 + 两边各标 {@code @Profile}（本类 "!prod"、
- * OSS 类 "prod"）做切换；本棒<b>刻意不加</b>任何 @Profile —— 仓库里 prod profile
+ * OSS 类 "prod"）做切换；这里<b>刻意不加</b>任何 @Profile —— 仓库里 prod profile
  * 尚不存在（application.yml 写死 active: dev，全仓无 application-prod.yml），
  * 现在标注解只会制造「将来可能不生效」的困惑，等真出现 prod 部署形态再补。
  *
@@ -38,7 +38,7 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
     /** GET/落库路径前缀，与 FileController 的映射一致 —— 两处对齐即可，勿散落成三处 */
     private static final String URL_PREFIX = "/tsa/files/";
 
-    /** 落盘扩展名白名单（契约 C8）：只可能生成这三种名，白名单外的对象名直接判非法 */
+    /** 落盘扩展名白名单：只可能生成这三种名，白名单外的对象名直接判非法 */
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
 
     /** 合法对象名：uuid（带横杠 36 位 / 去横杠 32 位）. 小写扩展名 —— 与 controller 正则同源，双保险 */

@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * Jackson 定制：LocalDateTime 序列化为「ISO 8601 带时区偏移」，如 2026-09-08T08:43:35+08:00。
  *
- * <p>踩坑记录（三步走出来的）：
+ * <p>为什么必须自定义序列化器（两条常见捷径都走不通）：
  * <ul>
  *   <li>application.yml 的 spring.jackson.date-format 只对 java.util.Date 生效，
  *       LocalDateTime 仍走 JSR-310 默认格式（无时区、带纳秒）</li>

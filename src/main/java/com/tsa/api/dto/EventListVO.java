@@ -8,15 +8,15 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 活动列表项（契约 C5，{@code GET /tsa/events} 分页元素）。
+ * 活动列表项（{@code GET /tsa/events} 分页元素）。
  *
- * <p>字段名钉死三方契约（后端/mock/前端 types 必须逐字一致）：
+ * <p>字段名与前端逐字对齐（后端与前端 types 必须一致）：
  * <ul>
- *   <li>{@code cover} 对应库列 cover_url —— 契约用前端惯用名，不用列名直译</li>
+ *   <li>{@code cover} 对应库列 cover_url —— 用前端惯用名，不用列名直译</li>
  *   <li>{@code status} 是<b>派生展示态</b> upcoming/past（start_time 与当前时间比较，
  *       不落库），不是 activity.status 那套 0/1/2/3 库内流转状态</li>
- *   <li>没有 content 字段 —— 正文留在公众号文章里（v1.2 D2 形态），接口永不外给</li>
- *   <li>{@code articleUrl} 2026-09-14 起随列表下发：web 端删除了事件详情页，
+ *   <li>没有 content 字段 —— 正文留在公众号文章里，接口永不外给</li>
+ *   <li>{@code articleUrl} 随列表下发：web 端删除了事件详情页，
  *       列表卡片直接跳公众号；值可为 null（秘书处未补链接的过渡态），键必须在场</li>
  * </ul>
  */

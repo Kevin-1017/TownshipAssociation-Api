@@ -8,12 +8,12 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 活动详情（契约 C6，{@code GET /tsa/events/{id}} 出参）。
+ * 活动详情（{@code GET /tsa/events/{id}} 出参）。
  *
  * <p>与 {@link EventListVO} 的字段差异即本期形态的全部信息量：
  * detail 页只多给一个 {@code articleUrl}（前端「阅读公众号全文」按钮的入参，
  * wx.openOfficialAccountArticle 打不开就复制链接兜底），<b>没有 content</b> ——
- * 正文永远留在公众号，小程序不重抄（v1.2 D2 拍板）。
+ * 正文永远留在公众号，小程序不重抄。
  * articleUrl 允许为 null（键必须在场，秘书处还没补链接的过渡态）。
  */
 @Data

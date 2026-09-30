@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 /**
  * 基金会奖项类别实体（首页「奖励」卡片 + 详情页分组依据）。
- * amount 为该类别奖金总额，单位：分。
+ * amount 为该类别奖金总额，单位：元。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

@@ -36,9 +36,9 @@ import java.util.stream.Collectors;
  * <p>评论条数不入库：列表页一次查询把本页动态的评论按 post_id 分组计数，避免逐条 count 的 N+1，
  * 也不会出现「计数与子表不一致」。详情页直接加载整棵评论树。
  *
- * <p>审核制（2026-09-14 帖子 / 2026-09-15 评论）：publish 与 comment 一律落待审（status=0），
- * 公开读路径（列表/详情/点赞/评论入口）只放行 status=1；驳回（2）保留记录可审回
- * （用户拍板「驳回可恢复」），存量行由迁移脚本的 DEFAULT 1 视为已过审，无需人工处理。
+ * <p>审核制：publish 与 comment 一律落待审（status=0），
+ * 公开读路径（列表/详情/点赞/评论入口）只放行 status=1；驳回（2）保留记录可审回，
+ * 存量行由迁移脚本的 DEFAULT 1 视为已过审，无需人工处理。
  */
 @Service
 @RequiredArgsConstructor
@@ -83,7 +83,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityPostMapper, Commu
     public CommunityPostVO getDetail(Long id) {
         // 出口审核闸门收在 requireApproved：未过审内容即使被直链也按「不存在」处理
         CommunityPost post = requireApproved(id);
-        // 评论树同样只放已过审（2026-09-15 评论审核制）；待审评论对所有人不可见，只在管理端队列里
+        // 评论树同样只放已过审；待审评论对所有人不可见，只在管理端队列里
         List<CommunityComment> comments = commentMapper.selectList(new LambdaQueryWrapper<CommunityComment>()
                 .eq(CommunityComment::getPostId, id)
                 .eq(CommunityComment::getStatus, STATUS_APPROVED)
@@ -114,7 +114,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityPostMapper, Commu
         Integer status = query.getStatus();
         if (status != null) {
             if (status == STATUS_PENDING || status == STATUS_REJECTED) {
-                // 统一审核态（2026-09-29 树形审核台）：待审/已驳队列要同时命中「动态本身处于该状态」
+                // 统一审核态（树形审核台）：待审/已驳队列要同时命中「动态本身处于该状态」
                 // 与「其下存在同状态评论」——评论只会挂在已过审动态下，仅按动态 status 筛会漏掉评论队列。
                 // group by post_id 去重取候选动态。
                 List<Long> commentPostIds = commentMapper.selectList(new LambdaQueryWrapper<CommunityComment>()
@@ -174,7 +174,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityPostMapper, Commu
         comment.setAvatar(request.getAvatar());
         comment.setContent(request.getContent());
         comment.setLikes(0);
-        // 一律待审：审核通过前不进详情评论树、不计数（用户定稿「评论应该过审」）
+        // 一律待审：审核通过前不进详情评论树、不计数
         comment.setStatus(STATUS_PENDING);
         comment.setCreateTime(LocalDateTime.now());
         commentMapper.insert(comment);

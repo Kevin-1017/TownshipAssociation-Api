@@ -13,7 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 /**
- * 健康检查接口：部署后运维/监控探活用，也作为学生认识项目的第一步。
+ * 健康检查接口：部署后运维/监控探活用。
  */
 @Tag(name = "系统", description = "健康检查等系统级接口")
 @RestController

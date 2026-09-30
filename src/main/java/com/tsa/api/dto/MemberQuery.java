@@ -6,7 +6,7 @@ import lombok.Data;
 /**
  * 成员列表查询条件（GET 请求的 query 参数自动绑定到本对象）。
  *
- * <p>参数名与前端契约一致：page / pageSize / province / city / industry / keyword。
+ * <p>参数名与前端一致：page / pageSize / province / city / industry / keyword。
  */
 @Data
 @Schema(description = "成员列表查询条件")

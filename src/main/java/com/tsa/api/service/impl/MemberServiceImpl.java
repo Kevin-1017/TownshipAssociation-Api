@@ -5,36 +5,23 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.tsa.api.common.BusinessException;
-import com.tsa.api.common.ResultCode;
 import com.tsa.api.dto.MapMarkerVO;
-import com.tsa.api.dto.MemberDetailVO;
 import com.tsa.api.dto.MemberQuery;
-import com.tsa.api.dto.MemberSaveRequest;
 import com.tsa.api.dto.MemberVO;
 import com.tsa.api.dto.PageVO;
 import com.tsa.api.dto.ProvinceStatVO;
 import com.tsa.api.entity.Member;
 import com.tsa.api.mapper.MemberMapper;
-import com.tsa.api.service.AuthService;
 import com.tsa.api.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.time.Year;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 成员业务实现。
- *
- * <p>教学要点：
- * <ul>
- *   <li>继承 ServiceImpl 获得 save/updateById/getById 等通用方法</li>
- *   <li>LambdaQueryWrapper 用方法引用（Member::getCity）写条件，避免字符串字段名拼错</li>
- *   <li>查询统一限定 status=1（审核通过），待审核数据不对外可见</li>
- * </ul>
+ * 成员业务实现：全部读端点统一限定 status=1（审核通过），待审核数据不对外可见。
  */
 @Service
 @RequiredArgsConstructor
@@ -42,14 +29,6 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
     /** 审核状态：通过 */
     private static final int STATUS_APPROVED = 1;
-    /** 审核状态：待审核 */
-    private static final int STATUS_PENDING = 0;
-    /** 联系方式可见：是 */
-    private static final int CONTACT_VISIBLE = 1;
-    /** 国家常量：一期只有国内成员，字段保留是为了二期海外潮籍乡亲不返工 */
-    private static final String COUNTRY_DEFAULT = "中国";
-
-    private final AuthService authService;
 
     @Override
     public PageVO<MemberVO> pageQuery(MemberQuery query) {
@@ -74,7 +53,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
     @Override
     public List<MapMarkerVO> listMapMarkers() {
-        // select 限定列：只查地图需要的字段，二期会在这里加 Redis 缓存
+        // select 限定列：只查地图需要的字段，字段裁剪到最小是这份端点的对外口径
         List<Member> members = this.list(new LambdaQueryWrapper<Member>()
                 .select(Member::getId, Member::getName, Member::getProvince, Member::getCity,
                         Member::getIndustry, Member::getAvatarUrl, Member::getLat, Member::getLng)
@@ -85,24 +64,6 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
         return members.stream()
                 .map(m -> BeanUtil.copyProperties(m, MapMarkerVO.class))
                 .toList();
-    }
-
-    @Override
-    public Member register(MemberSaveRequest request, String openid) {
-        // openid 由 Controller 从 Bearer loginId 推导传入（契约 C9 / 修订 A7 B16）：
-        // 查重与落库都只认这个服务端值，客户端自报通道已随 MemberSaveRequest 删字段而关闭
-        Member existing = this.getOne(new LambdaQueryWrapper<Member>()
-                .eq(Member::getOpenid, openid));
-        if (existing != null) {
-            throw new BusinessException(ResultCode.MEMBER_ALREADY_EXISTS);
-        }
-
-        Member member = BeanUtil.copyProperties(request, Member.class);
-        member.setOpenid(openid);
-        // 新注册一律待审核，由管理后台通过后才对外可见（审核接口二期做）
-        member.setStatus(STATUS_PENDING);
-        this.save(member);
-        return member;
     }
 
     @Override
@@ -121,38 +82,5 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
                         // COUNT(*) 经 JDBC 可能是 Long/BigInteger，统一走 Number 收口
                         row.get("cnt") == null ? 0L : ((Number) row.get("cnt")).longValue()))
                 .toList();
-    }
-
-    @Override
-    public MemberDetailVO getDetail(Long id, String assocToken) {
-        // 顺序即安全策略：先鉴权、后查存在性。反过来会让未鉴权的任何人
-        // 拿数字 id 探测「某成员是否存在」（1301 与 1002 是两个不同的响应）
-        authService.ensureAssoc(assocToken);
-
-        Member member = this.getById(id);
-        if (member == null || !Integer.valueOf(STATUS_APPROVED).equals(member.getStatus())) {
-            // 不存在与待审核/已拒绝同口径 1002：不给外部任何状态线索，与分页列表口径一致
-            throw new BusinessException(ResultCode.DATA_NOT_FOUND);
-        }
-
-        // phone/wechatId/contactVisible 不在拷贝列表里 —— 它们要经过隐私分支显式处理，
-        // 防止 copyProperties 把联系方式直接带过去绕开裁剪
-        MemberDetailVO vo = BeanUtil.copyProperties(member, MemberDetailVO.class,
-                "phone", "wechatId", "contactVisible");
-        vo.setContactVisible(Integer.valueOf(CONTACT_VISIBLE).equals(member.getContactVisible()));
-        vo.setCountry(COUNTRY_DEFAULT);
-        if (member.getGraduationYear() != null) {
-            vo.setSeniority(Year.now().getValue() - member.getGraduationYear());
-        }
-
-        if (Integer.valueOf(CONTACT_VISIBLE).equals(member.getContactVisible())) {
-            vo.setPhone(member.getPhone());
-            vo.setWechatId(member.getWechatId());
-        } else {
-            // 显式置 null 双保险：配合 @JsonInclude(NON_NULL) 让字段整个不出现在响应里（剔除，而非 null）
-            vo.setPhone(null);
-            vo.setWechatId(null);
-        }
-        return vo;
     }
 }

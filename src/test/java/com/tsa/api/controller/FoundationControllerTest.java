@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * FoundationController standalone MockMvc 测试（不连数据库）：只读接口。
  *
- * <p>v1.3 起写接口（categories/records/donations 的 POST/PUT/DELETE）已从本 Controller 迁至
+ * <p>写接口（categories/records/donations 的 POST/PUT/DELETE）已从本 Controller 迁至
  * AdminFoundationController（{@code /tsa/admin/foundation/**}），对应写用例随之搬至
  * {@link AdminFoundationControllerTest}；本类仅保留三个公开读接口用例。
  */

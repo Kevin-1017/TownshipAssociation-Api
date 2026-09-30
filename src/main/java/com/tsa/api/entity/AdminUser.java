@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 import java.time.LocalDateTime;
 
 /**
- * 管理后台账号实体（表已建好，登录接口在第二期开放）。
+ * 管理后台账号实体。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

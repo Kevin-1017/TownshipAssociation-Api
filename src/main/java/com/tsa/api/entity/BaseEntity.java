@@ -15,12 +15,8 @@ import java.time.LocalDateTime;
 /**
  * 实体基类：所有表的公共字段。
  *
- * <p>教学要点：
- * <ul>
- *   <li>id 用数据库自增（IdType.AUTO），简单直观</li>
- *   <li>createdAt / updatedAt 由 MybatisPlusConfig 中的 MetaObjectHandler 自动填充，业务代码不用管</li>
- *   <li>deleted 是"逻辑删除"标记：delete 语句实际执行 UPDATE ... SET deleted=1，数据可追溯</li>
- * </ul>
+ * <p>createdAt / updatedAt 由 MybatisPlusConfig 中的 MetaObjectHandler 自动填充，业务代码不用管；
+ * deleted 是「逻辑删除」标记：delete 语句实际执行 UPDATE ... SET deleted=1，数据可追溯。
  */
 @Data
 public abstract class BaseEntity {

@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 管理后台身份接口测试（standalone MockMvc，模板照抄 AuthControllerTest）。
  *
  * <p>admin-login/logout 在 AuthController（公开路径），/me 在 AdminAuthController（admin 墙内），
- * 故本类挂两套 standalone：登录/注销验 admin-login 契约（成功/1307/400），/me 验只读会话回显。
+ * 故本类挂两套 standalone：登录/注销验 admin-login 响应（成功/1307/400），/me 验只读会话回显。
  * StpUtil 只存在于 AdminAuthServiceImpl 内部，standalone 层 mock 掉 service 即可，不受 Sa-Token 环境影响；
  * checkRole("admin") 的闸门本身在 SaTokenConfig 拦截器，非 standalone 覆盖范围（属集成/手工回归）。
  */

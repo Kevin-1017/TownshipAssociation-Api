@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Configuration
 public class MybatisPlusConfig {
 
-    /** 分页插件：不注册它，page() 查询会全量捞内存再切页（新手最常见踩坑点） */
+    /** 分页插件：不注册它，page() 查询会全量捞内存再切页 */
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();

@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * 乡会事件管理接口（2026-09-14 管理端配置入口）：列表 + 增删改 + 封面上传。
+ * 乡会事件管理接口（管理端配置入口）：列表 + 增删改 + 封面上传。
  *
  * <p>鉴权同其余 /tsa/admin/**（SaTokenConfig 的 checkRole("admin")），本类不自建闸门；
  * Controller 零逻辑，字段落库与「删除即下架」语义收口在 EventService。
@@ -47,7 +47,7 @@ public class AdminEventController {
     private final FileStorageService fileStorageService;
 
     @Operation(summary = "事件分页列表（管理端）", description = "query：page/pageSize(钳1..50)/keyword(标题模糊)；"
-            + "start_time 倒序；出参复用契约 C5 列表 VO（含 articleUrl，可为 null）")
+            + "start_time 倒序；出参复用公开侧事件列表的 VO（含 articleUrl，可为 null）")
     @GetMapping("/events")
     public Result<PageVO<EventListVO>> page(EventAdminQuery query) {
         return Result.ok(eventService.adminPageQuery(query));
@@ -74,12 +74,12 @@ public class AdminEventController {
         return Result.ok();
     }
 
-    @Operation(summary = "事件封面上传", description = "multipart 字段名 file；≤2MB、限 jpg/png/webp（校验与 C8 同源 UploadRules）；"
+    @Operation(summary = "事件封面上传", description = "multipart 字段名 file；≤2MB、限 jpg/png/webp（校验与 /tsa/files 同源 UploadRules）；"
             + "admin 角色已由路由墙把关，不再叠 IP 限频；返回相对路径 /tsa/files/<uuid>.<ext>，随保存请求放进 cover")
     @PostMapping("/events/cover")
     public Result<FileUploadVO> uploadCover(@RequestPart(value = "file", required = false) MultipartFile file)
             throws IOException {
-        // 与 FileController/社区上传同一句 400 文案（契约 C8 收口口径），原因不细分
+        // 与 FileController/社区上传同一句 400 文案（统一收口口径），原因不细分
         if (!UploadRules.accepted(file)) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "文件超限或类型不支持");
         }

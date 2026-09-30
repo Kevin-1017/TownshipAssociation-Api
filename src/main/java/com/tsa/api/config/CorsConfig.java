@@ -10,7 +10,7 @@ import org.springframework.web.filter.CorsFilter;
  * 跨域配置：小程序请求不受跨域限制，但 React 官网（浏览器环境）会。
  *
  * <p>开发期放开所有来源（allowedOriginPattern + credentials 组合），
- * 生产部署时应收紧为官网域名白名单——写在文档 FAQ 里提醒学生。
+ * 生产部署时应收紧为官网域名白名单。
  */
 @Configuration
 public class CorsConfig {

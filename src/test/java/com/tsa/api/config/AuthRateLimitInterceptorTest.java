@@ -14,15 +14,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * AuthRateLimitInterceptor 直测（不起 Spring 上下文，直接喂 MockHttpServletRequest）。
  *
- * <p>钉死 2026-09-14 社区防灌的两个核心设计：
+ * <p>钉死社区防灌的两个核心设计：
  * ① 归一化桶——点赞/评论跨帖子 id 共享一个桶，换 id 轮询绕不过限频；
  * ② 双窗口——社区写走小时表、认证走分钟表，各桶互相独立、不同 IP 互相独立。
  */
 class AuthRateLimitInterceptorTest {
 
-    /** 阈值取生产口径：登录组 10/5/5 每分，社区四桶 5 每时 */
+    /** 阈值取生产口径：登录组 10/5 每分，社区四桶 5 每时 */
     private AuthRateLimitInterceptor newInterceptor() {
-        return new AuthRateLimitInterceptor(10, 5, 5, 5, 5, 5, 5);
+        return new AuthRateLimitInterceptor(10, 5, 5, 5, 5, 5);
     }
 
     private void pass(AuthRateLimitInterceptor it, String method, String uri, String ip) {

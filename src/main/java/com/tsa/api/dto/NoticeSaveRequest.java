@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 /**
  * 新增/修改公告请求（管理端 CRUD 用，POST/PUT /tsa/admin/notices）。
  *
- * <p>字段对齐 announcement 表 + NoticeVO 契约：用 {@code pinned} 布尔表达置顶（Service 层转 0/1 落 isTop），
+ * <p>字段对齐 announcement 表与出参 NoticeVO：用 {@code pinned} 布尔表达置顶（Service 层转 0/1 落 isTop），
  * 与出参 NoticeVO 同一命名口径。公告无上下架状态列（见 Announcement 实体），故本请求不造 status 字段。
  */
 @Data

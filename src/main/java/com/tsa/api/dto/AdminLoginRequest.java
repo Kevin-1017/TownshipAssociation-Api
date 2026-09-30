@@ -7,7 +7,7 @@ import lombok.ToString;
 
 /** 管理后台登录请求（POST /tsa/auth/admin-login）。 */
 @Data
-// 安全审查 minor#2：toString 排除 password，防日志/异常上下文泄露明文口令
+// toString 排除 password，防日志/异常上下文泄露明文口令
 @ToString(exclude = "password")
 @Schema(description = "管理后台登录请求")
 public class AdminLoginRequest {

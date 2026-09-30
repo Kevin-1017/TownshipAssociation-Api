@@ -27,11 +27,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * EventController 测试（契约 C5/C6，v1.2 D2「跳公众号文章」形态）。
+ * EventController 测试（「跳公众号文章」形态）。
  *
  * <p>模板照抄 MemberControllerTest：standalone MockMvc 只测 Web 层，Service 打桩。
  * 分页钳制（pageSize 1..50）、year 校验、status 派生等业务口径在 EventServiceImpl，
- * 本类钉的是<b>响应形状</b>：PageVO 契约键、id 字符串化、可空键在场（C5/C6 的
+ * 本类钉的是<b>响应形状</b>：PageVO 的分页键、id 字符串化、可空键在场（
  * cover/summary/articleUrl 为 null 时键不能消失——两个 VO 类上都没有 @JsonInclude，
  * 用原文子串断言锁死）、content 字段永不出现（正文留在公众号）。
  * startTime 只断言键在场：带时区的 ISO 8601 格式由应用装配的 JacksonConfig 决定，
@@ -64,7 +64,7 @@ class EventControllerTest {
     }
 
     @Test
-    @DisplayName("GET /events - 应返回 PageVO 契约形状 list/total/page/pageSize 与列表项字段")
+    @DisplayName("GET /events - 应返回 PageVO 分页形状 list/total/page/pageSize 与列表项字段")
     void pageShouldReturnContractShape() throws Exception {
         Mockito.when(eventService.pageQuery(ArgumentMatchers.any()))
                 .thenReturn(new PageVO<>(List.of(sampleListVO()), 30L, 1L, 10L));
@@ -80,7 +80,7 @@ class EventControllerTest {
                 .andExpect(jsonPath("$.data.list[0].title").value("成都老乡下午茶"))
                 .andExpect(jsonPath("$.data.list[0].status").value("upcoming"))
                 .andExpect(jsonPath("$.data.list[0].startTime").exists())
-                // 正文永不外给：字段在 VO 形状上根本不存在（D2 拍板），键出现即为回归
+                // 正文永不外给：字段在 VO 形状上根本不存在，键出现即为回归
                 .andExpect(jsonPath("$.data.list[0].content").doesNotExist())
                 // cover=null：键必须在场（前端据「键在值 null」走占位图，缺键=结构异常）
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"cover\":null")))
@@ -89,7 +89,7 @@ class EventControllerTest {
     }
 
     @Test
-    @DisplayName("GET /events - page/pageSize/year/yearFrom/yearTo 应原样绑定进 EventQuery 透传给 Service（C5）")
+    @DisplayName("GET /events - page/pageSize/year/yearFrom/yearTo 应原样绑定进 EventQuery 透传给 Service")
     void pageShouldBindQueryParamsAndPassThrough() throws Exception {
         Mockito.when(eventService.pageQuery(ArgumentMatchers.any()))
                 .thenReturn(new PageVO<>(List.<EventListVO>of(), 0L, 2L, 5L));

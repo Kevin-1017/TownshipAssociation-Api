@@ -67,7 +67,7 @@ public class Member extends BaseEntity {
     @Schema(description = "专业")
     private String major;
 
-    /** 微信号与手机号同类敏感：实体序列化出口统一屏蔽，详情接口在 Service 层按 contractVisible 显式裁剪 */
+    /** 微信号与手机号同类敏感：实体序列化出口统一屏蔽，VO 出口在 Service 层按 contactVisible 显式裁剪 */
     @JsonIgnore
     @Schema(description = "微信号（不对外返回）", hidden = true)
     private String wechatId;
@@ -78,7 +78,7 @@ public class Member extends BaseEntity {
     @Schema(description = "审核状态：0 待审核 / 1 已通过 / 2 已拒绝")
     private Integer status;
 
-    @Schema(description = "来源：0 后台种子 / 1 本人提交（v1.2 D3 profile 真保存建档时置 1）")
+    @Schema(description = "来源：0 后台种子 / 1 本人提交（本人保存资料建档时置 1）")
     private Integer source;
 
     @Schema(description = "个人简介")

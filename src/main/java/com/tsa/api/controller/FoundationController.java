@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * 校友基金会接口：小程序/官网<b>只读</b>展示（首页聚合 + 明细）。
  *
- * <p>写接口（类别/记录/捐赠的增删改）已于 v1.3 收口迁至 {@link AdminFoundationController}
+ * <p>写接口（类别/记录/捐赠的增删改）已收口迁至 {@link AdminFoundationController}
  * （{@code /tsa/admin/foundation/**}，需 admin 角色），本类只保留公开读接口，供小程序免登录浏览。
  */
 @Tag(name = "基金会", description = "奖励与捐赠：首页聚合与明细（只读）")

@@ -7,7 +7,7 @@ import com.tsa.api.dto.AdminLoginVO;
 /**
  * 管理后台身份服务：账号口令登录（loginId={@code admin-<id>}）+ 当前管理员读取 + 注销。
  *
- * <p>与 {@link AuthService}（微信 openid / assoc 乡会两套身份）并列，共用同一个 Sa-Token，
+ * <p>与 {@link AuthService}（微信 openid 身份）并列，共用同一个 Sa-Token，
  * 靠 loginId 前缀划命名空间。管理会话额外把 role/username 写进 SaSession，
  * 角色判定（供 /tsa/admin/** 的 checkRole("admin") 消费）在 {@code StpInterfaceImpl}。
  */

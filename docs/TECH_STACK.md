@@ -77,7 +77,7 @@ React 官网 ──────┘                              │
 | 级别 | 任务示例 | 涉及层 |
 |------|---------|--------|
 | L1 | 新增"荣誉墙"列表接口 | controller + mapper |
-| L2 | 成员注册 + 校验 + 头像上传 | service + DTO + FileStorage |
+| L2 | 资料保存 + 校验 + 头像上传 | service + DTO + FileStorage |
 | L3 | 地图聚合接口 + Redis 缓存 | 性能优化、缓存策略 |
 | L4 | 微信登录 + Sa-Token 鉴权 | 第三方集成、安全 |
 | L5 | CI/CD、消息队列、模块重构 | 工程化与架构 |

@@ -33,7 +33,7 @@ public class CommentVO {
     @Schema(description = "评论点赞数")
     private Integer likes;
 
-    @Schema(description = "所属动态 id（字符串形式；2026-09-15 评论审核制随管理端列表下发）", example = "1")
+    @Schema(description = "所属动态 id（字符串形式；随管理端列表下发）", example = "1")
     @JsonSerialize(using = ToStringSerializer.class)
     private Long postId;
 

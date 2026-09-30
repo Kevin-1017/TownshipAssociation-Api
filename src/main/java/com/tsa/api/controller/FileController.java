@@ -6,7 +6,6 @@ import com.tsa.api.common.ResultCode;
 import com.tsa.api.common.UploadRules;
 import com.tsa.api.config.ApiConstants;
 import com.tsa.api.dto.FileUploadVO;
-import com.tsa.api.service.AuthService;
 import com.tsa.api.service.FileStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,13 +27,10 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * 文件接口（契约 C8）：头像 / 活动封面共用的最小上传与公开回读。
+ * 文件接口：头像 / 活动封面共用的最小上传与公开回读。
  *
- * <p>闸门口径：POST 需<b>微信登录态</b>——路由层 checkLogin 圈住裸 token（SaTokenConfig
- * 按方法圈定 POST /tsa/files），方法内再过一道 {@code authService.currentOpenid()} 显式拒绝
- * assoc 前缀（修订 A9：assoc 令牌在 Sa-Token 眼里是合法会话，checkLogin 拦不住它，
- * /tsa/user/**、PUT /profile、POST /members 同口径，写门类端点一个都不能漏）。
- * GET 公开（&lt;image&gt; 组件发不了带令牌的请求，读图必须免登录）。
+ * <p>闸门口径：POST 需<b>微信登录态</b>——路由层 checkLogin 圈住（SaTokenConfig 按方法
+ * 圈定 POST /tsa/files）。GET 公开（&lt;image&gt; 组件发不了带令牌的请求，读图必须免登录）。
  *
  * <p>multipart 的接参与 JSON 不同：Bean Validation 的声明式校验覆盖不到文件字段，
  * 大小/类型这道「参数级」检查只能显式写在入口 —— 存储怎么落盘在
@@ -54,24 +50,20 @@ public class FileController {
             "webp", MediaType.parseMediaType("image/webp"));
 
     /**
-     * 对象名格式（契约 C8 原文钉死）：uuid（36 位带横杠 / 32 位去横杠）+ 3~4 位小写扩展名。
+     * 对象名格式：uuid（36 位带横杠 / 32 位去横杠）+ 3~4 位小写扩展名。
      * GET 第一道闸：不匹配直接 404，连存储层都不进 —— "../"、绝对路径、双扩展名全死在这行；
      * LocalFileStorageServiceImpl 里的白名单+越界检查是第二道闸（防这道将来被人"优化"掉）。
      */
     private static final Pattern SAFE_NAME = Pattern.compile("^[0-9a-f-]{32,36}\\.[a-z]{3,4}$");
 
     private final FileStorageService fileStorageService;
-    private final AuthService authService;
 
     @Operation(summary = "上传图片", description = "multipart 字段名 file；≤2MB、类型限 jpg/png/webp（按 content-type 判定）；"
             + "需 Bearer 登录态。返回相对访问路径 /tsa/files/<uuid>.<ext>（存库用，不落库由调用方决定）")
     @PostMapping
     public Result<FileUploadVO> upload(@RequestPart(value = "file", required = false) MultipartFile file)
             throws IOException {
-        // 身份裁决只验返回值丢弃：本期不做「文件归属表」(D3 定案不落库),但 assoc- 前缀必须拒
-        // ——否则乡会令牌可无限写盘(路由层的 checkLogin 对它是放行的,见类注释 A9)
-        authService.currentOpenid();
-        // 缺字段/空文件/超限/类型不符一律同一句 400 提示（契约 C8 钉死 message，规则收在 UploadRules，
+        // 缺字段/空文件/超限/类型不符一律同一句 400 提示（规则收在 UploadRules，
         // 与社区公开上传端点共用），不区分原因既省对客户端的信息泄露面，也省得前端为四种失败摆四张 toast
         String ext = UploadRules.extOfAllowedType(file);
         if (!UploadRules.accepted(file)) {

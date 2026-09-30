@@ -22,22 +22,22 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 /**
- * 活动业务实现（v1.2 D2）：activity 表只读投影，展示态实时派生。
+ * 活动业务实现：activity 表只读投影，展示态实时派生。
  *
  * <p>投影全部手写字段赋值而不是 BeanUtil：实体与 VO 有意<b>异名</b>
  * （coverUrl→cover），copyProperties 会静默漏掉异名字段——正是这种
  * 「拷了个 null 出去」最难查，索性逐字段写明白，白名单一目了然。
  *
- * <p>为什么不过滤库内 status 列（0未开始/1报名中…）：本期不做发布/下架开关（用户定稿
- * 「删除即下架」），发布靠逻辑删除位 deleted（@TableLogic 自动排除）、不碰 status 列；
- * 将来若真做下架工作流，收口加的就是这里一处过滤，不外溢到契约与前端。
+ * <p>为什么不过滤库内 status 列（0未开始/1报名中…）：本期不做发布/下架开关（「删除即下架」），
+ * 发布靠逻辑删除位 deleted（@TableLogic 自动排除）、不碰 status 列；
+ * 将来若真做下架工作流，收口加的就是这里一处过滤，不外溢到接口与前端。
  */
 @Service
 public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> implements EventService {
 
-    /** 展示态（契约 C5 字面量）：start_time 晚于此刻 */
+    /** 展示态字面量：start_time 晚于此刻 */
     private static final String STATUS_UPCOMING = "upcoming";
-    /** 展示态（契约 C5 字面量）：start_time 已到/已过——本期不做「进行中」细分，前端只分「近期/往期」 */
+    /** 展示态字面量：start_time 已到/已过——本期不做「进行中」细分，前端只分「近期/往期」 */
     private static final String STATUS_PAST = "past";
 
     /** 「此刻」的基准时区：与 JacksonConfig 的序列化时区同源——status 派生和 startTime 展示必须同一个钟 */
@@ -52,9 +52,9 @@ public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> impl
         LambdaQueryWrapper<Activity> wrapper = new LambdaQueryWrapper<Activity>()
                 .orderByDesc(Activity::getStartTime);
 
-        // 契约 C5：year（单年=区间退化）与 yearFrom..yearTo（含端点、两侧可缺省=开区间）
+        // 年份筛选：year（单年=区间退化）与 yearFrom..yearTo（含端点、两侧可缺省=开区间）
         // 同时给出时取交集：下界取最大、上界取最小。越界值直接判非法，而不是让 LocalDate.of
-        // 内部抛 DateTimeException 被兜底伪装成 500（B5 拆穿同一陷阱的口径）。
+        // 内部抛 DateTimeException 被兜底伪装成 500。
         requireFourDigitYear(query.getYear(), "年份参数不合法");
         requireFourDigitYear(query.getYearFrom(), "yearFrom须为4位数字年份");
         requireFourDigitYear(query.getYearTo(), "yearTo须为4位数字年份");
@@ -92,7 +92,7 @@ public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> impl
     public EventDetailVO detail(Long id) {
         Activity activity = this.getById(id);
         if (activity == null) {
-            // 契约 C6：查无回业务码 1002（与公告详情同款口径），不出 404 壳
+            // 查无回业务码 1002（与公告详情同款口径），不出 404 壳
             throw new BusinessException(ResultCode.DATA_NOT_FOUND, "活动不存在：id=" + id);
         }
         return toDetailVO(activity);
@@ -112,7 +112,7 @@ public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> impl
     public Long create(EventSaveRequest request) {
         Activity activity = new Activity();
         applyEditableFields(activity, request);
-        // 报名/经纬度/人数/content 等列不进管理端契约，保持库默认；status 列本期不参与对外过滤
+        // 报名/经纬度/人数/content 等列不进管理端接口，保持库默认；status 列本期不参与对外过滤
         this.save(activity);
         return activity.getId();
     }
@@ -145,7 +145,7 @@ public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> impl
         activity.setStartTime(request.getStartTime());
     }
 
-    /** 实体 → 列表项（契约 C5）：无 content；status 由 start_time 派生，不落库；articleUrl 供 web 列表直跳公众号 */
+    /** 实体 → 列表项：无 content；status 由 start_time 派生，不落库；articleUrl 供 web 列表直跳公众号 */
     private EventListVO toListVO(Activity activity) {
         EventListVO vo = new EventListVO();
         vo.setId(activity.getId());
@@ -158,7 +158,7 @@ public class EventServiceImpl extends ServiceImpl<ActivityMapper, Activity> impl
         return vo;
     }
 
-    /** 实体 → 详情（契约 C6）：列表字段 + articleUrl，唯独没有 content —— 正文在公众号 */
+    /** 实体 → 详情：列表字段 + articleUrl，唯独没有 content —— 正文在公众号 */
     private EventDetailVO toDetailVO(Activity activity) {
         EventDetailVO vo = new EventDetailVO();
         vo.setId(activity.getId());

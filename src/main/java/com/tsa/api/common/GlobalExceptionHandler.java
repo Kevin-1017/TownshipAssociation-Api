@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * 全局异常处理器：Controller 抛出的任何异常都在这里被"翻译"成统一 Result。
  *
- * <p>教学要点：有了它，业务代码里可以放心 throw，不用到处 try-catch 拼错误响应。
+ * <p>有了它，业务代码里可以放心 throw，不用到处 try-catch 拼错误响应。
  */
 @Slf4j
 @RestControllerAdvice
@@ -50,8 +50,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Content-Type 缺失/不匹配（如 form-urlencoded 打 JSON 接口）：与上面同属客户端问题，
-     * 与 B5 拆伪装层同理 —— 不接的话落 catch-all 伪装成 500，排查方向整个跑偏。
+     * Content-Type 缺失/不匹配（如 form-urlencoded 打 JSON 接口）：与上面同属客户端问题——
+     * 不接的话落 catch-all 伪装成 500，排查方向整个跑偏。
      */
     @ExceptionHandler(HttpMediaTypeException.class)
     public Result<Void> handleMediaType(HttpMediaTypeException e) {
@@ -60,7 +60,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 上传 body 击穿 spring.servlet.multipart 容器阈值（契约 C8）：
+     * 上传 body 击穿 spring.servlet.multipart 容器阈值：
      * 与 FileController 的业务级 2MB 校验同一句提示——「超限」无论拦在哪一层，
      * 对客户端必须是同一个错误，否则前端要为两个阈值摆两套文案。
      */
@@ -78,8 +78,8 @@ public class GlobalExceptionHandler {
 
     /**
      * 已登录但角色不符：{@code StpUtil.checkRole("admin")} 对 /tsa/admin/** 挡非管理员会话时抛此异常。
-     * 不接的话会落下方 catch-all 伪装成 500 —— 与 /tsa/admin/** 改判 checkRole（v1.3 防 openid/assoc
-     * 冒充）配套：匿名 → NotLoginException(401)、登录但非 admin → 本码(403)，两种态严格分离。
+     * 不接的话会落下方 catch-all 伪装成 500 —— 与 /tsa/admin/** 改判 checkRole（防微信 openid
+     * 登录态冒充）配套：匿名 → NotLoginException(401)、登录但非 admin → 本码(403)，两种态严格分离。
      */
     @ExceptionHandler(NotRoleException.class)
     public Result<Void> handleNotRoleException(NotRoleException e) {
@@ -95,8 +95,8 @@ public class GlobalExceptionHandler {
     /**
      * 404：Boot 3.2+ 起，未映射路径实际先落静态资源处理器、miss 后抛 NoResourceFoundException
      * （不再走 NoHandlerFoundException）。上面那条不接它，就会被下方 catch-all 伪装成
-     * HTTP 200 + code 500「服务器繁忙」——未实现的路由看着像服务器故障，排查全被带偏
-     * （「联调三大坑」之三）。拆掉这层伪装：路径 miss 就老实回 404。
+     * HTTP 200 + code 500「服务器繁忙」——未实现的路由看着像服务器故障，排查全被带偏。
+     * 拆掉这层伪装：路径 miss 就老实回 404。
      */
     @ExceptionHandler(NoResourceFoundException.class)
     public Result<Void> handleNoResourceFound(NoResourceFoundException e) {

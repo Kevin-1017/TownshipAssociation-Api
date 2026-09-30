@@ -25,8 +25,8 @@ import java.time.LocalDateTime;
  * <p>会话设计（与 AuthServiceImpl 同一命名空间互斥思路）：
  * <ul>
  *   <li>loginId 用 {@code "admin-" + admin_user.id} —— 连字符前缀是 {@link com.tsa.api.config.StpInterfaceImpl}
- *       判定 "admin" 角色的唯一依据（openid / assoc 会话永不可能长出此前缀），
- *       与 {@code assoc-} 惯例一致，且避开 Sa-Token 对 loginId 含冒号的默认禁令</li>
+ *       判定 "admin" 角色的唯一依据（openid 会话永不可能长出此前缀），
+ *       且避开 Sa-Token 对 loginId 含冒号的默认禁令</li>
  *   <li>role/username 写进 SaSession，供 {@code GET /tsa/admin/auth/me} 与角色判定读取（不随令牌出服务端）</li>
  * </ul>
  *
@@ -87,7 +87,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         // 幂等（同 AuthServiceImpl.logout 语义）：无 token 直接 200，前端清本地态不该被 401 卡住
         Object loginId = StpUtil.getLoginIdDefaultNull();
         if (loginId == null || !String.valueOf(loginId).startsWith(ADMIN_PREFIX)) {
-            // 非 admin 会话（openid / assoc）来调 admin-logout：不注销它，幂等静默返回
+            // 非 admin 会话（openid）来调 admin-logout：不注销它，幂等静默返回
             return;
         }
         StpUtil.logout();

@@ -91,7 +91,7 @@ Controller ──→ Service ──→ Mapper ──→ 数据库
 | 类型 | 规则 | 项目里的真实示例 |
 |------|------|-----------------|
 | 类名 | PascalCase + 后缀标明所在层 | `MemberController` / `MemberService` / `MemberServiceImpl` / `MemberMapper` |
-| 写接口入参 | `XxxRequest` | `MemberSaveRequest` |
+| 写接口入参 | `XxxRequest` | `ProfileUpdateRequest` / `EventSaveRequest` |
 | 读接口筛选参数 | `XxxQuery` | `MemberQuery` |
 | 出参裁剪对象 | `XxxVO` | `MapMarkerVO` |
 | 方法 | camelCase、动词开头；查询用 `get/list/page`，写操作用 `save/update/remove` | `pageQuery` / `listMapMarkers` / `register` |
@@ -136,11 +136,11 @@ public 在前、private 在后；辅助方法不要甩到文件末尾让人来�
 
 - 零容忍魔法值：状态一律定义 `private static final int STATUS_APPROVED = 1;`（参考 `MemberServiceImpl`）
 - 新错误码进 `ResultCode` 枚举按模块分段（成员 10xx、活动 11xx、公告 12xx、乡会/鉴权 13xx），并同步更新 API.md 状态码表
-  - 13xx 现覆盖：1301/1302/1303（小程序身份）、1306（认证端点限频）、**1307（管理后台登录失败，账号不存在/密码错/已删除统一码防枚举）**；1304/1305 预留勿复用。管理后台鉴权类新码继续走 13xx
+  - 13xx 现覆盖：1303（微信登录失败）、1306（认证端点限频）、**1307（管理后台登录失败，账号不存在/密码错/已删除统一码防枚举）**；1301/1302（原乡会核验链）已腾出、连同 1304/1305 预留勿复用。管理后台鉴权类新码继续走 13xx
 
 ### 3.7 注释
 
-- 类与公共方法写中文 Javadoc，说明"**为什么**"而不只是"是什么"（参考现有文件里的"教学要点"写法）
+- 类与公共方法写中文 Javadoc，说明"**为什么**"而不只是"是什么"；不留过程性编号（契约/修订号）、日期定稿记号与被注释掉的旧代码
 - import 顺序：JDK → 第三方框架 → 本项目，IDEA 默认的 optimize imports 即可，不要手动打乱
 
 ### 3.8 数据库

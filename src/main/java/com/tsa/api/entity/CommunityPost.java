@@ -26,7 +26,7 @@ public class CommunityPost extends BaseEntity {
     @Schema(description = "动态类型：food 美食 / campus 校园")
     private String type;
 
-    @Schema(description = "发布者昵称（一期无登录，自由填写）")
+    @Schema(description = "发布者昵称（无登录态，自由填写）")
     private String author;
 
     @Schema(description = "头像 URL")
@@ -51,7 +51,7 @@ public class CommunityPost extends BaseEntity {
     @Schema(description = "点赞数")
     private Integer likes;
 
-    @Schema(description = "审核状态：0 待审核 / 1 已通过 / 2 已驳回（审核制 2026-09-14）")
+    @Schema(description = "审核状态：0 待审核 / 1 已通过 / 2 已驳回")
     private Integer status;
 
     @Schema(description = "发布时间")

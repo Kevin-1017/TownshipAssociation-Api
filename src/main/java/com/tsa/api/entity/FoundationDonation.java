@@ -21,7 +21,7 @@ public class FoundationDonation extends BaseEntity {
     private Long amount;
 
     /**
-     * 金额是否对外展示。秘书处口径（2026-09-13）：除明确点名公开的记录外一律保密，
+     * 金额是否对外展示。秘书处口径：除明确点名公开的记录外一律保密，
      * 故默认 0（库层 DEFAULT 0 + 新增请求缺省 false 双保险）；true 的才会把 amount 带给前端。
      */
     @Schema(description = "金额是否公开显示")

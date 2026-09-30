@@ -10,18 +10,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 成员详情视图对象 —— 详情接口的出参契约，与小程序 MemberDetail 类型 1:1。
+ * 成员详情视图对象 —— 本人档案出参（/user/me 与登录结果的 user 键），与小程序 MemberDetail 类型 1:1。
  *
- * <p>与 {@link MemberVO}（列表用）的差别：字段更全，但整份详情只对乡会用户开放
- * （1301 闸门）。其中联系方式受两层管控：
- * <ul>
- *   <li>contactVisible=false 时<b>剔除</b> phone/wechatId —— 不是置 null 返回，
- *       配合 {@code @JsonInclude(NON_NULL)} 让字段根本不进响应 JSON</li>
- *   <li>实体上 phone/wechatId 已 @JsonIgnore，这里显式赋值是唯一出口</li>
- * </ul>
+ * <p>与 {@link MemberVO}（列表用）的差别：字段更全，本人视角含联系方式（不裁剪）；
+ * {@code contactVisible} 表达本人的联系方式可见性偏好（只约束他人能否查看）。
  */
 @Data
-@Schema(description = "成员详情（仅乡会用户可见）")
+@Schema(description = "成员详情（本人档案）")
 public class MemberDetailVO {
 
     @Schema(description = "成员 id（字符串形式）", example = "1")
@@ -70,14 +65,14 @@ public class MemberDetailVO {
     @Schema(description = "个人简介")
     private String intro;
 
-    @Schema(description = "联系方式可见性（后端已按此裁剪字段）")
+    @Schema(description = "联系方式可见性（本人偏好开关）")
     private Boolean contactVisible;
 
-    @Schema(description = "微信联系方式（contactVisible=false 时整个字段不出现）")
+    @Schema(description = "微信联系方式")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String wechatId;
 
-    @Schema(description = "手机号（contactVisible=false 时整个字段不出现）")
+    @Schema(description = "手机号")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String phone;
 

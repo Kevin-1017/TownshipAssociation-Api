@@ -4,10 +4,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 微信登录结果（契约 C1）。
+ * 微信登录结果。
  *
  * <p><b>类上禁加 {@code @JsonInclude(NON_NULL)}</b>：Result 本身无 NON_NULL 注解，
- * 而契约要求「已登录未建档」时 {@code data.user} 这个键必须出现在 JSON 里
+ * 而「已登录未建档」时 {@code data.user} 这个键必须出现在 JSON 里
  * （值为 null）——前端以「键在而值为 null」判定未建档引导态，键整个消失会被
  * 误判成响应结构异常。这是本类与 MemberDetailVO（字段级 NON_NULL）策略不同的原因。
  */

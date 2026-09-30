@@ -23,12 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 基金会管理端写接口（v1.3 从 FoundationController 收口迁入）。
+ * 基金会管理端写接口（自公开侧收口迁入）。
  *
- * <p>原 9 个写方法（categories/records/donations 的 POST/PUT/DELETE）本挂在公开的
- * {@code /tsa/foundation/**} 下、一期不鉴权；现整体迁到 admin 墙内的 {@code /tsa/admin/foundation/**}，
- * 由 SaTokenConfig 的 {@code checkRole("admin")} 把门。返回形状与原实现逐一保持一致
- * （POST 回字符串 id、PUT/DELETE 回 Void），业务全在 FoundationService，本类零逻辑。
+ * <p>写方法（categories/records/donations 的 POST/PUT/DELETE）整体置于 admin 墙内的
+ * {@code /tsa/admin/foundation/**}，由 SaTokenConfig 的 {@code checkRole("admin")} 把门。
+ * 返回形状与迁移前保持一致（POST 回字符串 id、PUT/DELETE 回 Void），业务全在 FoundationService，本类零逻辑。
  * 公开读接口仍留在 {@code FoundationController}（/tsa/foundation/** 公开，供小程序只读）；
  * 例外是捐赠管理端读（{@code GET /donations}）：官网需抹码保密、admin 要见金额原值，
  * 抹码口径由 {@code FoundationController#donations} 与本类各走各的 service 方法。

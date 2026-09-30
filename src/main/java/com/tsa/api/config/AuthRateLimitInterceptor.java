@@ -16,16 +16,15 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 公开写端点 IP 限频拦截器（计划 B12 + 2026-09-14 社区防灌扩展）。
+ * 公开写端点 IP 限频拦截器。
  *
  * <p>覆盖两组端点、两种窗口：
  * <ul>
- *   <li><b>认证组（60 秒固定窗口）</b>：wechat-login 10/分、verify-phone 5/分、admin-login 5/分。
- *       verify-phone 在 mock-mode 下是「随便填个手机号就拿到乡会身份」的入口，wechat-login 每次成功
- *       都要打一发微信上游，admin-login 是管理后台的口令爆破面。admin-login 阈值最紧，
- *       且后端对「账号不存在/密码错」统一回 1307 + 计时抹平（见 AdminAuthServiceImpl），
- *       再叠这道 IP 限频，让用户名枚举几乎不可行。</li>
- *   <li><b>社区写组（1 小时固定窗口，用户定稿 5 次/时/IP）</b>：发布（posts）、点赞（posts/&#42;/like）、
+ *   <li><b>认证组（60 秒固定窗口）</b>：wechat-login 10/分、admin-login 5/分。
+ *       wechat-login 每次成功都要打一发微信上游，admin-login 是管理后台的口令爆破面。
+ *       admin-login 阈值最紧，且后端对「账号不存在/密码错」统一回 1307 + 计时抹平
+ *       （见 AdminAuthServiceImpl），再叠这道 IP 限频，让用户名枚举几乎不可行。</li>
+ *   <li><b>社区写组（1 小时固定窗口，5 次/时/IP）</b>：发布（posts）、点赞（posts/&#42;/like）、
  *       评论（posts/&#42;/comments）、配图上传（uploads）。社区一期无登录、人人可写，
  *       不设闸口等于把「灌审核队列 / 刷赞刷评论 / 匿名刷盘」敞开放给脚本。</li>
  * </ul>
@@ -41,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p><b>边界与演进</b>（都随二期 Redis 化收口）：
  * <ul>
  *   <li>单实例内存实现：多实例部署时各数各的，实际阈值 ≈ N × 配置值</li>
- *   <li>IP 取 {@code request.getRemoteAddr()}（修订 A8）：直连/dev 下可信；一旦套 nginx 反代，
+ *   <li>IP 取 {@code request.getRemoteAddr()}：直连/dev 下可信；一旦套 nginx 反代，
  *       这里读到的是代理地址，全体用户共享一个桶——反代部署<b>必须</b>配
  *       {@code server.forward-headers-strategy}（prod env 已配 native），且仅在
  *       上游代理受信时启用，否则 XFF 可伪造直接绕过限频。故本类不自行解析 X-Forwarded-For。
@@ -56,12 +55,11 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
 
     /** 认证组窗口：60 秒（阈值语义「次/分钟」与它锁死） */
     private static final long WINDOW_MINUTE_MS = 60_000L;
-    /** 社区写组窗口：1 小时（用户定稿 5 次/时/IP；阈值语义「次/小时」与它锁死） */
+    /** 社区写组窗口：1 小时（阈值语义「次/小时」与它锁死） */
     private static final long WINDOW_HOUR_MS = 3_600_000L;
 
     /** 精确路径（无参数段） */
     private static final String WECHAT_LOGIN_PATH = ApiConstants.BASE_PATH + "/auth/wechat-login";
-    private static final String VERIFY_PHONE_PATH = ApiConstants.BASE_PATH + "/auth/verify-phone";
     private static final String ADMIN_LOGIN_PATH = ApiConstants.BASE_PATH + "/auth/admin-login";
     private static final String COMMUNITY_UPLOAD_PATH = ApiConstants.BASE_PATH + "/community/uploads";
     private static final String COMMUNITY_POST_PATH = ApiConstants.BASE_PATH + "/community/posts";
@@ -73,7 +71,6 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
     private final TimedCache<String, AtomicInteger> hourWindows = CacheUtil.newTimedCache(WINDOW_HOUR_MS);
 
     private final int loginPerMinute;
-    private final int verifyPhonePerMinute;
     private final int adminLoginPerMinute;
     private final int communityUploadPerHour;
     private final int communityPostPerHour;
@@ -86,14 +83,12 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
 
     public AuthRateLimitInterceptor(
             @Value("${tsa.rate-limit.login-per-minute:10}") int loginPerMinute,
-            @Value("${tsa.rate-limit.verify-phone-per-minute:5}") int verifyPhonePerMinute,
             @Value("${tsa.rate-limit.admin-login-per-minute:5}") int adminLoginPerMinute,
             @Value("${tsa.rate-limit.community-upload-per-hour:5}") int communityUploadPerHour,
             @Value("${tsa.rate-limit.community-post-per-hour:5}") int communityPostPerHour,
             @Value("${tsa.rate-limit.community-like-per-hour:5}") int communityLikePerHour,
             @Value("${tsa.rate-limit.community-comment-per-hour:5}") int communityCommentPerHour) {
         this.loginPerMinute = loginPerMinute;
-        this.verifyPhonePerMinute = verifyPhonePerMinute;
         this.adminLoginPerMinute = adminLoginPerMinute;
         this.communityUploadPerHour = communityUploadPerHour;
         this.communityPostPerHour = communityPostPerHour;
@@ -144,9 +139,6 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
         String path = pathWithinApp(request);
         if (WECHAT_LOGIN_PATH.equals(path)) {
             return new RateRule("auth/wechat-login", minuteWindows, loginPerMinute);
-        }
-        if (VERIFY_PHONE_PATH.equals(path)) {
-            return new RateRule("auth/verify-phone", minuteWindows, verifyPhonePerMinute);
         }
         if (ADMIN_LOGIN_PATH.equals(path)) {
             return new RateRule("auth/admin-login", minuteWindows, adminLoginPerMinute);

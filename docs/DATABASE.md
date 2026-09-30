@@ -50,18 +50,19 @@ title / summary（列表摘要）/ content / publisher_id / is_top（置顶排�
 
 ### activity_registration 活动报名（二期）
 `uk_activity_member(activity_id, member_id)` 保证**一人一活动只能有一条报名**；status：0报名/1签到/2取消。
+表保留，实体/Mapper 占位代码已删，二期按本节定义重建。
 
 ### admin_user 管理员
 username 唯一，password_hash 存 BCrypt(cost=10) 哈希（绝不明文入库/回前端），role：1超管/2普通。
-v1.3 起 `POST /tsa/auth/admin-login` 消费本表（loginId=`admin-<id>`，连字符前缀与 `assoc-` 惯例一致）；
+v1.3 起 `POST /tsa/auth/admin-login` 消费本表（loginId=`admin-<id>` 连字符前缀）；
 账号不存在/密码错/软删除统一回 1307（防枚举）。
 **初始种子账号**见 [`../sql/migrate-2026-09-14-admin-login.sql`](../sql/migrate-2026-09-14-admin-login.sql)
 （`INSERT IGNORE` 幂等植入超级管理员 `admin`；明文口令走交付说明下发、不入库，上线后立即改密）。
 
 ### association_member 乡会用户（内部名册）
 **内部手动维护，不对外提供 CRUD 接口** —— 数据由乡会秘书处手动 SQL 增删改。
-乡会身份的唯一区分依据是 `phone`（uk_phone 唯一）：`verify-phone` 核验时比对，
-命中才算乡会用户，才有资格访问成员详情（1301 闸门）。
+乡会身份核验链（verify-phone / 1301 详情闸门）已整体下线，本表暂无代码消费方，
+仅保留结构与秘书处数据，二期重建核验时按本节口径恢复。
 字段：phone / name / role（会长/理事/会员等）/ remark（仅内部可见）/
 member_ref_id（二期映射 member.id，实现登录态自动识别乡会身份，一期恒 NULL）。
 

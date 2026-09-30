@@ -51,7 +51,7 @@ class AnnouncementControllerTest {
     }
 
     @Test
-    @DisplayName("GET /notices - 列表应返回 data 数组，字段为契约形状")
+    @DisplayName("GET /notices - 列表应返回 data 数组，字段形状正确")
     void listShouldReturnContractShape() throws Exception {
         Mockito.when(announcementService.listForHome()).thenReturn(List.of(sample()));
 

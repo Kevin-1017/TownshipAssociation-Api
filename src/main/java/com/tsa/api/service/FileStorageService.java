@@ -5,11 +5,11 @@ import org.springframework.core.io.Resource;
 import java.io.InputStream;
 
 /**
- * 文件存储服务抽象（v1.2 D3 落地本地磁盘实现：头像 / 活动封面共用）。
+ * 文件存储服务抽象（本地磁盘实现：头像 / 活动封面共用）。
  *
- * <p>教学要点：先定义接口、再延迟实现——业务代码只认本接口，将来换存储介质
- * （OSS / MinIO）时新增实现类即可，Controller 与 DTO 零改动。
- * 本期对象一律为<b>扁平名</b>（{@code <uuid>.<ext>}，契约 C8 钉死的命名），
+ * <p>业务代码只依赖本接口：将来换存储介质（OSS / MinIO）时新增实现类即可，
+ * Controller 与 DTO 零改动。
+ * 对象一律为<b>扁平名</b>（{@code <uuid>.<ext>} 统一命名），
  * 不引入目录层级——头像没有按日期分片的检索需求，多一层目录只多一处穿越面。
  */
 public interface FileStorageService {
@@ -17,7 +17,7 @@ public interface FileStorageService {
     /**
      * 上传文件并返回可访问路径。
      *
-     * <p>本地实现返回 {@code /tsa/files/<objectKey>}（GET 端点回读，契约 C8 的相对路径）；
+     * <p>本地实现返回 {@code /tsa/files/<objectKey>}（GET 端点回读的相对路径）；
      * 二期 OSS 实现可返回 CDN 绝对 URL——存库/下发统一只用本返回值，
      * 调用方禁止自己拼前缀，两种实现才能无痛切换。
      *

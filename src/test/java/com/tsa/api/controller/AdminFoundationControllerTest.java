@@ -22,9 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * AdminFoundationController 测试（standalone MockMvc）：验写接口迁移后仍委托 FoundationService、Result 形状不变。
- *
- * <p>这些用例是从旧 FoundationControllerTest 的写接口用例随迁移一并搬过来的（路径改到 /tsa/admin/foundation/**）。
+ * AdminFoundationController 测试（standalone MockMvc）：验写接口委托 FoundationService、Result 形状不变。
  */
 class AdminFoundationControllerTest {
 

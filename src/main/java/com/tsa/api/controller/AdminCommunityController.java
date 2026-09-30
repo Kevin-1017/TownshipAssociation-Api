@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 社区动态管理接口（2026-09-14 审核制）：待审列表 + 通过/驳回。
+ * 社区动态管理接口（审核制）：待审列表 + 通过/驳回。
  *
  * <p>鉴权在路由层统一收口（SaTokenConfig 的 /tsa/admin/** → checkRole("admin")），
  * 本类不再自建闸门；Controller 零逻辑，审核规则与状态校验全在 CommunityService。

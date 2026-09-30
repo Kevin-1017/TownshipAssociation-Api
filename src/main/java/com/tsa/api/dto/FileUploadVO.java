@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 文件上传结果（契约 C8，{@code POST /tsa/files} 出参）。
+ * 文件上传结果（{@code POST /tsa/files} 出参）。
  *
  * <p>只回相对路径不回绝对 URL：API base 是前端编译期常量（VITE_API_BASE_URL），
  * 后端拼它反而把部署域名写进了数据；落库存的也是这个相对路径

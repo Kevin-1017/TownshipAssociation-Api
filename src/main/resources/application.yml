@@ -64,25 +64,20 @@ knife4j:
   setting:
     language: zh_cn
 
-# ------- 业务配置占位（第二期启用，先留好结构） -------
+# ------- 业务配置 -------
 tsa:
   wechat:
-    # 小程序 appid/secret：code2session（二期登录）与 getuserphonenumber（乡会手机号核验）
-    # 共用同一对凭据，通过环境变量注入，切勿把明文提交进 Git
+    # 小程序 appid/secret：jscode2session 登录换 openid 用，
+    # 通过环境变量注入，切勿把明文提交进 Git
     app-id: ${WECHAT_APP_ID:}
     app-secret: ${WECHAT_APP_SECRET:}
-    # 手机号核验逃生通道：true 时把换号 code 原样当手机号返回（本地联调用，
-    # 无企业认证主体时调不了真实换号接口）。生产环境必须为 false！
-    mock-mode: ${WECHAT_MOCK_MODE:false}
     # 微信登录逃生通道：true 时跳过 jscode2session、固定回 openid=mock-openid-local（本地无凭据联调用）。
-    # 与 mock-mode 是两把独立开关、可各开各的分别验证；生产环境必须为 false
-    # （WechatClientImpl 启动守卫：非 dev/test 环境任一开关为 true 直接拒绝启动）！
+    # 生产环境必须为 false（WechatClientImpl 启动守卫：非 dev/test 环境开关为 true 直接拒绝启动）！
     login-mock-mode: ${WECHAT_LOGIN_MOCK_MODE:false}
   rate-limit:
     # /tsa/auth/** 按 IP 固定 60s 窗口限频（AuthRateLimitInterceptor，内存实现=单实例假设）：
-    # 防 verify-phone 被伪造手机号爆破、防 wechat-login 被脚本刷穿凭据/出口带宽、防 admin-login 口令爆破。超限回业务码 1306
+    # 防 wechat-login 被脚本刷穿凭据/出口带宽、防 admin-login 口令爆破。超限回业务码 1306
     login-per-minute: ${RATE_LIMIT_LOGIN_PER_MIN:10}
-    verify-phone-per-minute: ${RATE_LIMIT_VERIFY_PER_MIN:5}
     admin-login-per-minute: ${RATE_LIMIT_ADMIN_LOGIN_PER_MIN:5}
     # 社区写端点（发布/点赞/评论/上传）按 IP 固定 1 小时窗口限频（2026-09-14 用户定稿 5 次/时，
     # 全免登录写口一律收口；点赞/评论跨帖子 id 共享同桶，归一化口径见拦截器类注释）
@@ -91,9 +86,6 @@ tsa:
     community-like-per-hour: ${RATE_LIMIT_COMMUNITY_LIKE_PER_HOUR:5}
     community-upload-per-hour: ${RATE_LIMIT_COMMUNITY_UPLOAD_PER_HOUR:5}
   files:
-    # 文件上传本地磁盘根目录（契约 C8，第 2 棒 FileStorageService 消费本键）：
+    # 文件上传本地磁盘根目录（FileStorageService 消费本键）：
     # 部署时经环境变量换到持久卷；prod 终态切 OSS 后此键废弃
     dir: ${TSA_FILES_DIR:./upload-data}
-  map:
-    # 腾讯位置服务 key：地理编码/逆地理编码使用
-    qq-key: ${QQ_MAP_KEY:}

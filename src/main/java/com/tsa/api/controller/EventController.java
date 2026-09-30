@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 活动接口（v1.2 D2「跳公众号文章」形态）：公开只读两个端点。
+ * 活动接口（「跳公众号文章」形态）：公开只读两个端点。
  *
  * <p>Controller 零逻辑：分页/年份筛选/展示态派生全在 EventService。
  * 公开理由：活动是拉新门面，未登录用户必须能逛列表与详情——
- * SaTokenConfig 的锁只圈 /tsa/user/**、POST /tsa/members、POST /tsa/files，
- * 本前缀天然免登录（「计划 B16/A7 一次配齐」口径，勿在此另立闸门）。
+ * SaTokenConfig 的锁只圈 /tsa/user/**、POST /tsa/files，
+ * 本前缀天然免登录（闸门已在路由层一次配齐，勿在此另立）。
  */
 @Tag(name = "活动", description = "活动列表与详情（正文在公众号，小程序只给链接）")
 @RestController

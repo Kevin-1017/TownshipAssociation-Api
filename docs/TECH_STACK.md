@@ -100,13 +100,13 @@ Spring Boot 3.5.6+ 官方支持 JDK 25；本项目已按支持版本锁定依赖
 | `PaginationInnerInterceptor` 找不到 | 3.5.9 起分页插件拆到独立模块 | `pom.xml` 补 `mybatis-plus-jsqlparser` |
 | 访问 /v3/api-docs 报 `NoSuchMethodError: getGroupConfigs` | Knife4j 4.5.0（最后版本）按旧版 springdoc 编译，与 2.8.x 不兼容 | `application.yml` 排除 `Knife4jAutoConfiguration`，doc.html 保留可用 |
 
-## 6. 环境与部署规划
+## 6. 环境与部署
 
 | 阶段 | 内容 |
 |------|------|
-| 开发期（现在） | 本机 JDK 25 + 本机 MySQL80 服务 + `mvnw` 构建；Redis 不用 |
-| 二期 | Redis 7（docker-compose）、文件存储、微信登录 |
-| 部署期 | 服务器 Docker Compose 编排（应用 + MySQL + Redis + Nginx），仓库已留 Dockerfile 模板 |
+| 开发期 | 本机 JDK 25 + 本机 MySQL 8 + `mvnw` 构建；Redis 不用 |
+| 生产（现网） | 腾讯云服务器（新加坡）：systemd 服务 `tsa-api` 直跑 jar + 本机 MySQL 8 + Nginx 托管静态站并反代 `/tsa`；部署流程见 Web 仓库 `docs/DEPLOY.md` |
+| 二期规划 | Redis 7、Docker Compose 编排（仓库留有 Dockerfile 模板，尚未启用） |
 
 ## 7. 代码规范约定
 

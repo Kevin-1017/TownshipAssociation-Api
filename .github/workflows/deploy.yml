@@ -1,0 +1,145 @@
+name: deploy-api
+
+# 口径：push 到 master 自动跑测试+打包；deploy 作业挂 production 环境审批，人工点确认才真上线。
+# 只给 push 配部署——这是公开仓，若给 pull_request / pull_request_target 开部署，
+# 任何人都能靠一个 PR 读到 DEPLOY_SSH_KEY。
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: tsa-deploy-api
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  DOMAIN: gdutgaginang.cn
+
+jobs:
+  build:
+    name: 64 项测试 + 打 jar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'      # pom 要求 java.version=25
+          cache: maven
+      # 测试不连库，所以不需要 mysql service 容器
+      # 入口与本机/03 脚本一致用 ./mvnw（.mvn/wrapper 走 aliyun 镜像取 maven 3.9.16；
+      # 若 CI 取镜像不稳，改成 runner 自带的 mvn 即可）
+      - name: 测试
+        run: ./mvnw -B test
+      - name: 打包
+        run: ./mvnw -B package -DskipTests
+      - name: 产物自检
+        run: |
+          set -euo pipefail
+          jar=$(ls -1 target/tsa-api-*.jar | grep -v '\.original$' | head -1)
+          echo "jar=$jar 体积=$(stat -c %s "$jar")"
+          ls -la target/*.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tsa-api-jar
+          path: target/tsa-api-0.0.1-SNAPSHOT.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    name: 上 HK 生产机（需 Approve）
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://gdutgaginang.cn
+    steps:
+      - name: Secret 完整性自检
+        # 早失败早清楚：secret 没填/名字不对/填进了 Variables 时，报「缺哪个」而不是 ssh 的空主机名
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          miss=()
+          [ -n "${DEPLOY_USER:-}" ] || miss+=(DEPLOY_USER)
+          [ -n "${DEPLOY_HOST:-}" ] || miss+=(DEPLOY_HOST)
+          [ -n "${DEPLOY_SSH_KEY:-}" ] || miss+=(DEPLOY_SSH_KEY)
+          [ -n "${DEPLOY_KNOWN_HOSTS:-}" ] || miss+=(DEPLOY_KNOWN_HOSTS)
+          if [ ${#miss[@]} -gt 0 ]; then
+            echo "这些 Secret 取到的是空值：${miss[*]}"
+            echo "检查：是不是填进了 Variables 标签页而不是 Secrets；名字大小写/空格是否一致；本仓是否单独填过"
+            exit 1
+          fi
+          echo "四个 Secret 均非空 → 目标 $DEPLOY_USER@$DEPLOY_HOST"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tsa-api-jar
+          path: from-build
+
+      - name: 装部署密钥与主机指纹
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          # tr -d '\r' 是必需的：Windows 记事本/剪贴板存进 Secret 会带 CRLF，OpenSSH 解析会失败
+          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      # 只投递到 tsa-deploy 自己的 incoming；env（DB 口令唯一副本）全程不经 CI
+      - name: 上传 jar
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          set -euo pipefail
+          scp -o StrictHostKeyChecking=yes from-build/tsa-api-0.0.1-SNAPSHOT.jar \
+            "$DEPLOY_USER@$DEPLOY_HOST:incoming/tsa-api.jar.new"
+
+      - name: 服务器侧换包+重启（先 dump，起不来会自动回滚旧 jar）
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          set -euo pipefail
+          ssh -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "sudo /opt/tsa/deploy/deploy.sh api ${GITHUB_SHA::12}"
+
+      - name: 记录当前线上版本
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            'cat /opt/tsa/deploy/state/api.json'
+
+      - name: 公网冒烟（runner 自己走真公网）
+        run: |
+          set -euo pipefail
+          body=$(curl -sS --max-time 20 "https://$DOMAIN/tsa/health")
+          echo "health=$body"
+          # 一律用 case 而不是 | grep -q：pipefail 下 grep 提前退出会让上游 curl 吃 SIGPIPE 判失败
+          case "$body" in
+            *'"status":"ok"'*) ;;
+            *) echo "health 响应里没有 status:ok"; exit 1 ;;
+          esac
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://$DOMAIN/")
+          echo "首页 https=$code"; [ "$code" = "200" ]
+          # 错误响应也是 HTTP 200 包 JSON 壳：鉴权看 body 的 code，文档壳看 404
+          adm=$(curl -sS --max-time 20 "https://$DOMAIN/tsa/admin/community/posts")
+          case "$adm" in
+            *'"code":401'*) echo "未授权 admin 路由 = 401 壳，符合预期" ;;
+            *) echo "未授权 admin 路由返回异常：$adm"; exit 1 ;;
+          esac
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://$DOMAIN/tsa/doc.html")
+          echo "doc.html=$code"; [ "$code" = "404" ]

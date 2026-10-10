@@ -22,6 +22,7 @@ jobs:
   build:
     name: 64 项测试 + 打 jar
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -40,12 +41,15 @@ jobs:
         run: |
           set -euo pipefail
           jar=$(ls -1 target/tsa-api-*.jar | grep -v '\.original$' | head -1)
+          [ -n "${jar:-}" ] || { echo "target 下没有 tsa-api-*.jar"; exit 1; }
+          # 归一成固定名：pom 的 version 以后变了，上传与 scp 都不用来改这条流水
+          cp "$jar" target/tsa-api.jar
           echo "jar=$jar 体积=$(stat -c %s "$jar")"
           ls -la target/*.jar
       - uses: actions/upload-artifact@v4
         with:
           name: tsa-api-jar
-          path: target/tsa-api-0.0.1-SNAPSHOT.jar
+          path: target/tsa-api.jar
           if-no-files-found: error
           retention-days: 7
 
@@ -53,6 +57,7 @@ jobs:
     name: 上 HK 生产机（需 Approve）
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: production
       url: https://gdutgaginang.cn
@@ -103,7 +108,8 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           set -euo pipefail
-          scp -o StrictHostKeyChecking=yes from-build/tsa-api-0.0.1-SNAPSHOT.jar \
+          # BatchMode：任何交互式提示（口令/密码询问）直接报错退出，而不是吊死到超时
+          scp -o StrictHostKeyChecking=yes -o BatchMode=yes from-build/tsa-api.jar \
             "$DEPLOY_USER@$DEPLOY_HOST:incoming/tsa-api.jar.new"
 
       - name: 服务器侧换包+重启（先 dump，起不来会自动回滚旧 jar）
@@ -112,21 +118,24 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           set -euo pipefail
-          ssh -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+          ssh -o StrictHostKeyChecking=yes -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST" \
             "sudo /opt/tsa/deploy/deploy.sh api ${GITHUB_SHA::12}"
 
       - name: 记录当前线上版本
+        # always()：换包失败（deploy.sh 已自动回滚）时也要把 state 落进日志，便于判断现在线上是谁
+        if: always()
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
-          ssh -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
-            'cat /opt/tsa/deploy/state/api.json'
+          ssh -o StrictHostKeyChecking=yes -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            'cat /opt/tsa/deploy/state/api.json' || echo "取不到状态文件（网络/主机问题），以冒烟结果为准"
 
       - name: 公网冒烟（runner 自己走真公网）
         run: |
           set -euo pipefail
-          body=$(curl -sS --max-time 20 "https://$DOMAIN/tsa/health")
+          # health 带 --retry：换包后服务重启与公网探活之间总有几秒窗口，重试比误报红便宜
+          body=$(curl -sS --retry 3 --retry-delay 2 --max-time 30 "https://$DOMAIN/tsa/health")
           echo "health=$body"
           # 一律用 case 而不是 | grep -q：pipefail 下 grep 提前退出会让上游 curl 吃 SIGPIPE 判失败
           case "$body" in

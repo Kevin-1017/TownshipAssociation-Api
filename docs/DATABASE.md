@@ -107,6 +107,14 @@ donor_name / amount（元）/ donation_date。首页与详情页 tab1 共用，�
 > 管理系统接入时统一加鉴权（v1.2 D7 口径，非「无鉴权规划」）。社区前端已下线但接口与数据刻意保留，
 > 见 API.md「社区模块下线」节。
 
+### csgo_lineup CS 道具点位（2026-10-15 kevin/csgo 可配置化）
+map / site / kind（枚举 `smoke`/`flash`/`molotov`/`decoy`，校验在 LineupSaveRequest 的 @Pattern）/
+name / style / steps（**JSON 列**，分步操作字符串数组，`JacksonTypeHandler` + `autoResultMap`，同 community_post.images）/
+note / images（**JSON 列**，截图相对路径数组，无图为空数组）。
+数据源为官网个人页 `kevin/csgo` 指南（前台浏览器运行时拉 `GET /tsa/lineups`，静态导出无 SSR 时机）；
+配置入口 admin `POST/PUT/DELETE /tsa/admin/lineups`，截图上传 `POST /tsa/admin/lineups/image`（UploadRules 同源）。
+列表不分页一次给全（服务端钳 200 上限，规范 3.8）；建表与打样种子见 `sql/migrate-2026-10-15-csgo-lineup.sql`。
+
 ## 约定（学生必读）
 
 1. **逻辑删除**：禁止物理 DELETE，删除即 `UPDATE ... SET deleted=1`（MyBatis-Plus `@TableLogic` 自动处理）。

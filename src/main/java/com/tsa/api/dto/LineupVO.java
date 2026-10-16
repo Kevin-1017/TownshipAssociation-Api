@@ -24,10 +24,7 @@ public class LineupVO {
     @Schema(description = "地图名", example = "Mirage")
     private String map;
 
-    @Schema(description = "归类点位名", example = "警家")
-    private String site;
-
-    @Schema(description = "道具类型：smoke/flash/molotov/decoy", example = "smoke")
+    @Schema(description = "道具类型：烟/闪/火/雷/诱饵", example = "烟")
     private String kind;
 
     @Schema(description = "点位一句话名字")
@@ -35,9 +32,6 @@ public class LineupVO {
 
     @Schema(description = "投掷方式标签", example = "站位")
     private String style;
-
-    @Schema(description = "分步操作（按顺序）")
-    private List<String> steps;
 
     @Schema(description = "用途或备注")
     private String note;

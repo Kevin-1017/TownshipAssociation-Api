@@ -102,7 +102,7 @@
 | GET | `/tsa/foundation` | 基金会首页聚合（rewards 奖励类别 + donations 捐赠；amount 单位元） |
 | GET | `/tsa/foundation/rewards` | 奖励明细（categories 类别名 + records 获奖记录，含 categoryName） |
 | GET | `/tsa/foundation/donations` | 捐赠明细（按日期倒序） |
-| GET | `/tsa/lineups` | CS 道具点位全量列表（公开；官网 kevin/csgo 指南数据源，浏览器运行时拉取；按 地图→点位→道具→id 升序；不分页一次给全，服务端钳 200 上限；VO=`LineupVO{id,map,site,kind,name,style,steps[],note,images[]}`，images 为相对路径数组） |
+| GET | `/tsa/lineups` | CS 道具点位全量列表（公开；官网 kevin/csgo 指南数据源，浏览器运行时拉取；按 地图→道具→id 升序；不分页一次给全，服务端钳 200 上限；VO=`LineupVO{id,map,kind,name,style,note,images[]}`，kind 为中文值 烟/闪/火/雷/诱饵，images 为相对路径数组；2026-10-16 起无 site/steps） |
 | POST | `/tsa/auth/admin-login` | 管理后台登录（公开、**限频 5/分/IP**；body `{username,password}` → `data={token,username,role}`；账号不存在/密码错/已删除统一 **1307**；空字段 400；超频 1306） |
 | POST | `/tsa/auth/admin-logout` | 注销当前 admin 会话（无守卫、非 admin/无 token 幂等 200 data=null） |
 | GET | `/tsa/admin/auth/me` | 当前登录管理员（**需 admin 角色**；`data={username,role}`，role 1超管/2普通；未登录 401、非 admin 403） |
@@ -123,7 +123,7 @@
 | DELETE | `/tsa/admin/events/{id}` | 删除事件=下架（**需 admin 角色**；逻辑删除，公开列表/详情立即查无；id 不存在 1002） |
 | POST | `/tsa/admin/events/cover` | 事件封面上传（**需 admin 角色**；multipart 字段名 file，校验与 `/tsa/files` 同源 UploadRules ≤2MB/jpg·png·webp；不加 IP 限频（角色墙已收口）；回 `{path}` 随保存请求放进 cover） |
 | GET | `/tsa/admin/lineups` | 道具点位全量列表·管理端（**需 admin 角色**；与公开侧 `/tsa/lineups` 同源同形同排序，本表无状态列） |
-| POST | `/tsa/admin/lineups` | 新建点位（**需 admin 角色**；LineupSaveRequest{map≤32,site≤32,kind∈smoke/flash/molotov/decoy,name≤64,style≤32,steps 1..20 条每条≤200,note≤500,images≤9 张}；整单必填口径；返回字符串 id） |
+| POST | `/tsa/admin/lineups` | 新建点位（**需 admin 角色**；LineupSaveRequest{map≤32,kind∈烟/闪/火/雷/诱饵,name≤64,style≤32,note≤500,images≤9 张}；整单必填口径；2026-10-16 起无 site/steps；返回字符串 id） |
 | PUT | `/tsa/admin/lineups/{id}` | 修改点位（**需 admin 角色**；**整单覆写**（管理表单带齐全部字段，images 不传=清空，与公告同语义、非 events 的 null=不改）；id 不存在 1002） |
 | DELETE | `/tsa/admin/lineups/{id}` | 删除点位（**需 admin 角色**；逻辑删除，前台列表立即查无；id 不存在 1002） |
 | POST | `/tsa/admin/lineups/image` | 点位截图上传（**需 admin 角色**；multipart 字段名 file，校验同 `/tsa/admin/events/cover` 一套 UploadRules；单次单张、≤2MB、限 jpg/png/webp；回 `{path}` 随保存请求放进 images） |

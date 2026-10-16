@@ -27,7 +27,7 @@ public class LineupController {
 
     private final LineupService lineupService;
 
-    @Operation(summary = "点位全量列表", description = "按 地图→点位→道具→id 升序；不分页一次给全（服务端钳 200 上限）")
+    @Operation(summary = "点位全量列表", description = "按 地图→道具→id 升序；不分页一次给全（服务端钳 200 上限）")
     @GetMapping
     public Result<List<LineupVO>> list() {
         return Result.ok(lineupService.listAll());

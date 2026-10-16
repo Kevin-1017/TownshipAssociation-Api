@@ -50,11 +50,9 @@ class AdminLineupControllerTest {
     private LineupSaveRequest validRequest() {
         LineupSaveRequest req = new LineupSaveRequest();
         req.setMap("Mirage");
-        req.setSite("警家");
-        req.setKind("smoke");
+        req.setKind("烟");
         req.setName("T 一号位警家烟");
         req.setStyle("站位");
-        req.setSteps(List.of("站位贴墙", "瞄参照点", "原地投"));
         req.setNote("双封烟第一颗");
         req.setImages(List.of("/tsa/files/0b1e.jpg"));
         return req;
@@ -66,7 +64,6 @@ class AdminLineupControllerTest {
         LineupVO vo = new LineupVO();
         vo.setId(1L);
         vo.setName("T 一号位警家烟");
-        vo.setSteps(List.of("站位贴墙"));
         vo.setImages(List.of());
         Mockito.when(lineupService.listAll()).thenReturn(List.of(vo));
 
@@ -105,10 +102,10 @@ class AdminLineupControllerTest {
     }
 
     @Test
-    @DisplayName("POST /admin/lineups - 道具类型不在枚举应 400 且 message 含「道具类型」")
+    @DisplayName("POST /admin/lineups - 道具类型不在中文枚举应 400 且 message 含「道具类型」")
     void createShouldFailWhenKindInvalid() throws Exception {
         LineupSaveRequest req = validRequest();
-        req.setKind("grenade");
+        req.setKind("smoke");
 
         mockMvc.perform(post("/tsa/admin/lineups")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -116,20 +113,6 @@ class AdminLineupControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(ResultCode.BAD_REQUEST.getCode()))
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("道具类型")));
-    }
-
-    @Test
-    @DisplayName("POST /admin/lineups - 步骤为空应 400 且 message 含「至少」")
-    void createShouldFailWhenStepsEmpty() throws Exception {
-        LineupSaveRequest req = validRequest();
-        req.setSteps(List.of());
-
-        mockMvc.perform(post("/tsa/admin/lineups")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(ResultCode.BAD_REQUEST.getCode()))
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("至少")));
     }
 
     @Test

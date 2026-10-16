@@ -29,7 +29,6 @@ public class LineupServiceImpl extends ServiceImpl<LineupMapper, Lineup> impleme
         Page<Lineup> page = this.page(new Page<>(1, MAX_LIST_LIMIT),
                 new LambdaQueryWrapper<Lineup>()
                         .orderByAsc(Lineup::getMap)
-                        .orderByAsc(Lineup::getSite)
                         .orderByAsc(Lineup::getKind)
                         .orderByAsc(Lineup::getId));
         return page.getRecords().stream().map(this::toVO).toList();
@@ -65,16 +64,14 @@ public class LineupServiceImpl extends ServiceImpl<LineupMapper, Lineup> impleme
 
     /**
      * 请求 → 实体整单覆写（新增/修改共用）：管理表单总是带齐全部字段提交，
-     * 语义与公告一致（见 LineupSaveRequest 类注释）。steps 去引用防外部改动；
+     * 语义与公告一致（见 LineupSaveRequest 类注释）。
      * images 缺省落空数组，出参形状更稳（前台无需判 null）。
      */
     private void applyRequest(Lineup lineup, LineupSaveRequest request) {
         lineup.setMap(request.getMap());
-        lineup.setSite(request.getSite());
         lineup.setKind(request.getKind());
         lineup.setName(request.getName());
         lineup.setStyle(request.getStyle());
-        lineup.setSteps(List.copyOf(request.getSteps()));
         lineup.setNote(request.getNote());
         lineup.setImages(request.getImages() == null ? List.of() : List.copyOf(request.getImages()));
     }
@@ -84,11 +81,9 @@ public class LineupServiceImpl extends ServiceImpl<LineupMapper, Lineup> impleme
         LineupVO vo = new LineupVO();
         vo.setId(lineup.getId());
         vo.setMap(lineup.getMap());
-        vo.setSite(lineup.getSite());
         vo.setKind(lineup.getKind());
         vo.setName(lineup.getName());
         vo.setStyle(lineup.getStyle());
-        vo.setSteps(lineup.getSteps());
         vo.setNote(lineup.getNote());
         vo.setImages(lineup.getImages() == null ? List.of() : lineup.getImages());
         return vo;

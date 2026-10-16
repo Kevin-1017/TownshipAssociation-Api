@@ -373,37 +373,32 @@ CREATE TABLE wechat_user (
 
 -- ------------------------------------------------------------
 -- 13. CS 道具点位表（官网 kevin/csgo 道具指南，后台可配置）
---     steps/images 为 JSON 数组；images 存相对路径（/tsa/files/…），
---     展示端拼绝对地址。kind 枚举 smoke/flash/molotov/decoy。
+--     images 为 JSON 数组，存相对路径（/tsa/files/…），展示端拼绝对地址。
+--     kind 枚举中文值 烟/闪/火/雷/诱饵（校验在 LineupSaveRequest @Pattern）。
+--     2026-10-16 精简：删 site/steps 列（见 migrate-2026-10-16-csgo-lineup-simplify.sql）。
 --     行数量级为几十条，列表接口不分页一次给全（服务端钳 200 上限）。
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS csgo_lineup (
     id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
     map        VARCHAR(32)     NOT NULL COMMENT '地图名（Mirage/Inferno…，前台页签按本列去重生成）',
-    site       VARCHAR(32)     NOT NULL COMMENT '归类点位名（如「警家」「香蕉道」）',
-    kind       VARCHAR(16)     NOT NULL COMMENT '道具类型：smoke烟/flash闪/molotov火/decoy诱饵',
+    kind       VARCHAR(16)     NOT NULL COMMENT '道具类型（中文值）：烟/闪/火/雷/诱饵',
     name       VARCHAR(64)     NOT NULL COMMENT '点位一句话名字',
     style      VARCHAR(32)     NOT NULL COMMENT '投掷方式标签：站位/跳投/Timing 等',
-    steps      JSON            NOT NULL COMMENT '分步操作（JSON 字符串数组）',
     note       VARCHAR(500)    NULL COMMENT '用途或备注',
     images     JSON            NULL COMMENT '截图 URL 数组（JSON，相对路径 /tsa/files/…）',
     created_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted    TINYINT         NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
-    KEY idx_map_site (map, site)
+    KEY idx_map (map)
 ) ENGINE = InnoDB COMMENT 'CS 道具点位（kevin/csgo 指南）';
 
 -- kevin/csgo 打样数据迁移入库（与 2026-10 前端 lineups.ts 示例同源；
 -- 上线后在 /admin/lineups 里直接改这几条即可，详见 migrate-2026-10-15-csgo-lineup.sql）
-INSERT INTO csgo_lineup (map, site, kind, name, style, steps, note) VALUES
-    ('Mirage',  '警家',     'smoke',   'T 萌新一号位警家烟（示例）', '站位',
-     JSON_ARRAY('站 T 二楼口栏杆最左侧，背贴墙', '平视对准对面电线杆与屋檐交界点', '大跳松 W 落定后原地投，抛物线过高说明参照点偏了'),
+INSERT INTO csgo_lineup (map, kind, name, style, note) VALUES
+    ('Mirage',  '烟', 'T 萌新一号位警家烟（示例）', '站位',
      '示例占位：请替换成你实测稳定落进警家的站位。'),
-    ('Mirage',  'Connector', 'molotov', '哨位近道火（示例）',         '跳投',
-     JSON_ARRAY('从 T 出口贴右墙助跑', '瞄二楼窗下沿', '出跳瞬间投，落点近道拐角'), NULL),
-    ('Inferno', '香蕉道',   'smoke',   'CT 位香蕉道烟（示例）',       '站位',
-     JSON_ARRAY('香蕉道 CT 侧沙堆后站位', '瞄墓园砖缝交叉点', '高抛落 CT 车头'),
+    ('Mirage',  '火', '哨位近道火（示例）',         '跳投', NULL),
+    ('Inferno', '烟', 'CT 位香蕉道烟（示例）',       '站位',
      '示例占位，换成你自己的双封烟第一颗。'),
-    ('Inferno', 'Arch',     'flash',   '拱门反清闪（示例）',         '反弹',
-     JSON_ARRAY('退到图书馆门框', '瞄右侧门柱上沿打反弹', '爆点刚好盖住拱门缺口'), NULL);
+    ('Inferno', '闪', '拱门反清闪（示例）',         '反弹', NULL);

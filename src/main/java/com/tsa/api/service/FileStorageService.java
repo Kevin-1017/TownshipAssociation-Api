@@ -17,9 +17,9 @@ public interface FileStorageService {
     /**
      * 上传文件并返回可访问路径。
      *
-     * <p>本地实现返回 {@code /tsa/files/<objectKey>}（GET 端点回读的相对路径）；
-     * 二期 OSS 实现可返回 CDN 绝对 URL——存库/下发统一只用本返回值，
-     * 调用方禁止自己拼前缀，两种实现才能无痛切换。
+     * <p>本地实现返回 {@code /tsa/files/<objectKey>}（GET 端点回读的相对路径），
+     * 图片会被统一转码成 WebP——uuid 不变、扩展名换成 .webp，所以<b>存库/回显只认本返回值</b>；
+     * 二期 OSS 实现可返回 CDN 绝对 URL——两种实现调用方都禁止自己拼前缀或猜扩展名。
      *
      * @param objectKey   对象名（{@code <uuid>.<ext>}；实现必须防目录穿越，见 load 同款说明）
      * @param contentType MIME 类型（本地实现暂不消费——GET 侧按扩展名回推；

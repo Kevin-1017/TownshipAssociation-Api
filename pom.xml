@@ -117,6 +117,14 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- 图片上传转码：ImageIO 原生无 WebP 编码器，这个插件补 writer（含 reader）。
+             内含各平台 native lib，运行时自动解到 tmpdir；缺它时存储层自动回退存原图，不影响上传 -->
+        <dependency>
+            <groupId>org.sejda.imageio</groupId>
+            <artifactId>webp-imageio</artifactId>
+            <version>0.1.6</version>
+        </dependency>
+
         <!-- 测试：JUnit 5 + Mockito + MockMvc -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

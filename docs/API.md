@@ -87,8 +87,8 @@
 | POST | `/tsa/auth/logout` | 注销当前 Bearer 会话（无守卫、无 token 幂等 200 data=null；同 openid 其他端旧 token 滞留本期可接受） |
 | GET | `/tsa/user/me` | 本人档案（**需 Bearer**；data=MemberDetailVO｜null（null=未建档，前端走「点击完善资料」引导）；本人视角**不裁** phone/wechatId；未登录 → 401） |
 | PUT | `/tsa/user/profile` | 保存本人资料（**需 Bearer**；全字段可选、只更白名单，status/province/city/openid/source 结构上不可改；无档案首次提交即建档 status=0 待审 + source=1；返回保存后最新档案；401 同上） |
-| POST | `/tsa/files` | 上传图片（**需 Bearer**；multipart 字段名 `file`，≤2MB、类型限 jpg/png/webp 按 content-type 判定；data=`{path:"/tsa/files/<uuid>.<ext>"}` 相对路径、不落库；缺字段/空/超限/类型不符一律 400「文件超限或类型不支持」） |
-| GET | `/tsa/files/{name}` | 读取图片（公开——`<image>` 组件发不了带令牌请求；name 须为上传返回的 uuid 文件名，非法名/文件不存在一律 code=404 壳；按扩展名给 Content-Type） |
+| POST | `/tsa/files` | 上传图片（**需 Bearer**；multipart 字段名 `file`，≤2MB、类型限 jpg/png/webp 按 content-type 判定；data=`{path:"/tsa/files/<uuid>.<ext>"}` 相对路径、不落库；图片入库前统一转 WebP（长边≤1080、q78），转码成功时返回扩展名变 `.webp`（uuid 不变）、解不出/编码器异常则原样落盘——**存库只认返回值，勿按上传扩展名推断**；缺字段/空/超限/类型不符一律 400「文件超限或类型不支持」） |
+| GET | `/tsa/files/{name}` | 读取图片（公开——`<image>` 组件发不了带令牌请求；name 须为上传返回的 uuid 文件名，非法名/文件不存在一律 code=404 壳；按扩展名给 Content-Type；线上 uuid 形态的请求由 nginx 直出（不过本服务、带一年 immutable 缓存），其余形态才进这里，文件缺失回 nginx 裸 404） |
 | GET | `/tsa/events` | 活动分页列表（公开；query：page 默认 1、pageSize 默认 10 钳 1..50、year 可选 4 位数字按 start_time 年份、yearFrom/yearTo 可选年份区间含端点（任一侧可缺省=开区间，与 year 同时给出取交集，yearFrom>yearTo 或越界 400）；start_time 倒序；status 为派生 upcoming/past 不落库；列表项含 **articleUrl**（可为 null，web 端已删详情页、列表卡片直跳公众号）；**无正文**） |
 | GET | `/tsa/events/{id}` | 活动详情（公开；含 articleUrl=公众号永久链接可为 null，前端「阅读公众号全文」按钮用它调 wx.openOfficialAccountArticle；查无 1002；**无 content 字段**——正文留在公众号） |
 | GET | `/tsa/notices` | 公告列表（置顶优先；字段含 summary 摘要与 pinned 布尔） |

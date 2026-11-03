@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -66,15 +65,27 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 
     @Override
     public String upload(String objectKey, String contentType, InputStream content) {
-        Path target = resolveInside(objectKey);
+        byte[] raw;
         try (content) {
-            Files.copy(content, target, StandardCopyOption.REPLACE_EXISTING);
+            // 先全量读进内存（业务闸已限 ≤2MB）：转码要完整字节，流式落盘则无法回退
+            raw = content.readAllBytes();
+        } catch (IOException e) {
+            log.error("文件读取失败: {}", objectKey, e);
+            throw new BusinessException(ResultCode.ERROR, "文件写入失败");
+        }
+        // 统一压成 WebP；解不出/编码器缺席时回退原字节原对象名（压缩失败不拦上传）
+        ImageWebpTranscoder.Webp webp = ImageWebpTranscoder.transcode(objectKey, raw);
+        String key = webp == null ? objectKey : webp.objectKey();
+        byte[] bytes = webp == null ? raw : webp.data();
+        Path target = resolveInside(key);
+        try {
+            Files.write(target, bytes);
         } catch (IOException e) {
             // 写盘失败是服务端问题（磁盘满/权限），对外收敛到通用 ERROR，细节只进日志
             log.error("文件写入失败: {}", target, e);
             throw new BusinessException(ResultCode.ERROR, "文件写入失败");
         }
-        return URL_PREFIX + objectKey;
+        return URL_PREFIX + key;
     }
 
     @Override

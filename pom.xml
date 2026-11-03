@@ -28,6 +28,15 @@
         <!-- 覆盖 knife4j 自带的旧版 springdoc：2.8.x 才兼容 Boot 3.5 -->
         <springdoc.version>2.8.17</springdoc.version>
         <hutool.version>5.8.47</hutool.version>
+        <!-- 覆盖 Boot BOM(3.5.16) 管理的 commons-lang3 3.17.0：CVE-2025-48924（ClassUtils.getClass 无限递归致
+             StackOverflow，影响 3.0~<3.18.0）。取 3.20.0——满足公告「≥3.18.0」且避开刚发布一个月的 3.21.0。
+             本组件为传递依赖（Boot 3.5 的 BOM 统一管版本，属性一覆盖即全局生效），本工程代码未直接调用。 -->
+        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <!-- 覆盖 Boot BOM 管理的 log4j2 2.24.3：CVE-2026-49844（MapMessage 序列化为 JSON 时未处理 NaN/Infinity
+             等非有限浮点值，产出违反 RFC 8259 的非法 JSON，影响 2.13.1~2.26.0）。2.26.1 为 2.x 线修复版。
+             本工程只经 spring-boot-starter-logging 引 log4j-api + log4j-to-slf4j 做 API 转发，实际落地日志是
+             Logback，无 log4j-core 也就没有 JSON layout，触发面为零；仍按公告升级，两个 artifact 同属性同步。 -->
+        <log4j2.version>2.26.1</log4j2.version>
     </properties>
 
     <dependencies>
